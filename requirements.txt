@@ -1,0 +1,7 @@
+torch
+torchvision
+onnx
+onnxruntime
+pycocotools
+PyYAML
+scipy
