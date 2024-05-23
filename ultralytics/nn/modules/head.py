@@ -101,6 +101,8 @@ class Detect(nn.Module):
 
     def decode_bboxes(self, bboxes, anchors):
         """Decode bounding boxes."""
+        if self.export:
+            return dist2bbox(bboxes, anchors, xywh=False, dim=1)
         return dist2bbox(bboxes, anchors, xywh=True, dim=1)
 
 
