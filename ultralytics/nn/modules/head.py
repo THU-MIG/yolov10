@@ -12,6 +12,7 @@ from .block import DFL, Proto, ContrastiveHead, BNContrastiveHead
 from .conv import Conv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
+import copy
 
 __all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder"
 
@@ -40,17 +41,17 @@ class Detect(nn.Module):
         self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc, 1)) for x in ch)
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
-    def forward(self, x):
-        """Concatenates and returns predicted bounding boxes and class probabilities."""
-        for i in range(self.nl):
-            x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
-        if self.training:  # Training path
-            return x
+    def generate_static_anchors(self, x):
+        shape = x[0].shape
+        self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
+        self.shape = shape
 
+    def inference(self, x):
         # Inference path
         shape = x[0].shape  # BCHW
         x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
         if self.dynamic or self.shape != shape:
+            assert(not self.export)
             self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
@@ -73,6 +74,21 @@ class Detect(nn.Module):
 
         y = torch.cat((dbox, cls.sigmoid()), 1)
         return y if self.export else (y, x)
+
+    def forward_feat(self, x, cv2, cv3):
+        y = []
+        for i in range(self.nl):
+            y.append(torch.cat((cv2[i](x[i]), cv3[i](x[i])), 1))
+        return y
+
+    def forward(self, x):
+        """Concatenates and returns predicted bounding boxes and class probabilities."""
+        y = self.forward_feat(x, self.cv2, self.cv3)
+        
+        if self.training:
+            return y
+
+        return self.inference(y)
 
     def bias_init(self):
         """Initialize Detect() biases, WARNING: requires stride availability."""
@@ -480,3 +496,34 @@ class RTDETRDecoder(nn.Module):
         xavier_uniform_(self.query_pos_head.layers[1].weight)
         for layer in self.input_proj:
             xavier_uniform_(layer[0].weight)
+
+class v10Detect(Detect):
+
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+        c3 = max(ch[0], min(self.nc, 100))  # channels
+        self.cv3 = nn.ModuleList(nn.Sequential(nn.Sequential(Conv(x, x, 3, g=x), Conv(x, c3, 1)), \
+                                               nn.Sequential(Conv(c3, c3, 3, g=c3), Conv(c3, c3, 1)), \
+                                                nn.Conv2d(c3, self.nc, 1)) for i, x in enumerate(ch))
+
+        self.one2one_cv2 = copy.deepcopy(self.cv2)
+        self.one2one_cv3 = copy.deepcopy(self.cv3)
+    
+    def forward(self, x):
+        one2one = self.forward_feat([xi.detach() for xi in x], self.one2one_cv2, self.one2one_cv3)
+        if not self.training:
+            one2one = self.inference(one2one)
+            return one2one
+        else:
+            one2many = super().forward(x)
+            return {"one2many": one2many, "one2one": one2one}
+
+    def bias_init(self):
+        super().bias_init()
+        """Initialize Detect() biases, WARNING: requires stride availability."""
+        m = self  # self.model[-1]  # Detect() module
+        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1
+        # ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
+        for a, b, s in zip(m.one2one_cv2, m.one2one_cv3, m.stride):  # from
+            a[-1].bias.data[:] = 1.0  # box
+            b[-1].bias.data[: m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)

@@ -49,10 +49,15 @@ from ultralytics.nn.modules import (
     CBFuse,
     CBLinear,
     Silence,
+    C2fCIB,
+    PSA,
+    SCDown,
+    RepVGGDW,
+    v10Detect
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss
+from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v10DetectLoss
 from ultralytics.utils.plotting import feature_visualization
 from ultralytics.utils.torch_utils import (
     fuse_conv_and_bn,
@@ -191,6 +196,9 @@ class BaseModel(nn.Module):
                 if isinstance(m, RepConv):
                     m.fuse_convs()
                     m.forward = m.forward_fuse  # update forward
+                if isinstance(m, RepVGGDW):
+                    m.fuse()
+                    m.forward = m.forward_fuse
             self.info(verbose=verbose)
 
         return self
@@ -294,6 +302,8 @@ class DetectionModel(BaseModel):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
+            if isinstance(m, v10Detect):
+                forward = lambda x: self.forward(x)["one2many"]
             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
@@ -627,6 +637,9 @@ class WorldModel(DetectionModel):
                     return torch.unbind(torch.cat(embeddings, 1), dim=0)
         return x
 
+class YOLOv10DetectionModel(DetectionModel):
+    def init_criterion(self):
+        return v10DetectLoss(self)
 
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
@@ -869,6 +882,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWConvTranspose2d,
             C3x,
             RepC3,
+            PSA,
+            SCDown,
+            C2fCIB
         }:
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
@@ -880,7 +896,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 )  # num heads
 
             args = [c1, c2, *args[1:]]
-            if m in (BottleneckCSP, C1, C2, C2f, C2fAttn, C3, C3TR, C3Ghost, C3x, RepC3):
+            if m in (BottleneckCSP, C1, C2, C2f, C2fAttn, C3, C3TR, C3Ghost, C3x, RepC3, C2fCIB):
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is AIFI:
@@ -897,7 +913,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
-        elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn}:
+        elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}:
             args.append([ch[x] for x in f])
             if m is Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
@@ -936,7 +952,10 @@ def yaml_model_load(path):
         LOGGER.warning(f"WARNING ⚠️ Ultralytics YOLO P6 models now use -p6 suffix. Renaming {path.stem} to {new_stem}.")
         path = path.with_name(new_stem + path.suffix)
 
-    unified_path = re.sub(r"(\d+)([nslmx])(.+)?$", r"\1\3", str(path))  # i.e. yolov8x.yaml -> yolov8.yaml
+    if "v10" not in str(path):
+        unified_path = re.sub(r"(\d+)([nsblmx])(.+)?$", r"\1\3", str(path))  # i.e. yolov8x.yaml -> yolov8.yaml
+    else:
+        unified_path = path
     yaml_file = check_yaml(unified_path, hard=False) or check_yaml(path)
     d = yaml_load(yaml_file)  # model dict
     d["scale"] = guess_model_scale(path)
@@ -959,7 +978,7 @@ def guess_model_scale(model_path):
     with contextlib.suppress(AttributeError):
         import re
 
-        return re.search(r"yolov\d+([nslmx])", Path(model_path).stem).group(1)  # n, s, m, l, or x
+        return re.search(r"yolov\d+([nsblmx])", Path(model_path).stem).group(1)  # n, s, m, l, or x
     return ""
 
 
@@ -982,7 +1001,7 @@ def guess_model_task(model):
         m = cfg["head"][-1][-2].lower()  # output module name
         if m in {"classify", "classifier", "cls", "fc"}:
             return "classify"
-        if m == "detect":
+        if m == "detect" or m == "v10detect":
             return "detect"
         if m == "segment":
             return "segment"
@@ -1014,7 +1033,7 @@ def guess_model_task(model):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"
-            elif isinstance(m, (Detect, WorldDetect)):
+            elif isinstance(m, (Detect, WorldDetect, v10Detect)):
                 return "detect"
 
     # Guess from model filename
