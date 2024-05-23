@@ -9,10 +9,13 @@ class YOLOv10DetectionPredictor(DetectionPredictor):
         if isinstance(preds, (list, tuple)):
             preds = preds[0]
         
-        preds = preds.transpose(-1, -2)
-        bboxes, scores, labels = ops.v10postprocess(preds, self.args.max_det)
-        bboxes = ops.xywh2xyxy(bboxes)
-        preds = torch.cat([bboxes, scores.unsqueeze(-1), labels.unsqueeze(-1)], dim=-1)
+        if preds.shape[-1] == 6:
+            pass
+        else:
+            preds = preds.transpose(-1, -2)
+            bboxes, scores, labels = ops.v10postprocess(preds, self.args.max_det)
+            bboxes = ops.xywh2xyxy(bboxes)
+            preds = torch.cat([bboxes, scores.unsqueeze(-1), labels.unsqueeze(-1)], dim=-1)
 
         mask = preds[..., 4] > self.args.conf
 

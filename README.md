@@ -58,15 +58,23 @@ yolo predict model=yolov10n/s/m/b/l/x.pt
 ```
 
 ## Export
+```
+# End-to-End ONNX
+yolo export model=yolov10n/s/m/b/l/x.pt format=onnx opset=13 simplify
+# Predict with ONNX
+yolo predict model=yolov10n/s/m/b/l/x.onnx
 
-
-## Latency Measurement 
-
-
+# End-to-End TensorRT
+yolo export model=yolov10n/s/m/b/l/x.pt format=engine half=True simplify opset=13 workspace=16
+# Or
+trtexec --onnx=onnxs/yolov10n/s/m/b/l/x.onnx --saveEngine=engines/yolov10n/s/m/b/l/x.engine --fp16
+# Predict with TensorRT
+yolo predict model=yolov10n/s/m/b/l/x.engine
+```
 
 ## Acknowledgement
 
-The code base is built with [ultralytics](https://github.com/ultralytics/ultralytics)
+The code base is built with [ultralytics](https://github.com/ultralytics/ultralytics) and [RT-DETR](https://github.com/lyuwenyu/RT-DETR)
 
 Thanks for the great implementations! 
 

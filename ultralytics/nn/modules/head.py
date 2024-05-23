@@ -13,6 +13,7 @@ from .conv import Conv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
 import copy
+from ultralytics.utils import ops
 
 __all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder"
 
@@ -51,7 +52,6 @@ class Detect(nn.Module):
         shape = x[0].shape  # BCHW
         x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
         if self.dynamic or self.shape != shape:
-            assert(not self.export)
             self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
@@ -501,6 +501,8 @@ class RTDETRDecoder(nn.Module):
 
 class v10Detect(Detect):
 
+    max_det = -1
+
     def __init__(self, nc=80, ch=()):
         super().__init__(nc, ch)
         c3 = max(ch[0], min(self.nc, 100))  # channels
@@ -515,7 +517,12 @@ class v10Detect(Detect):
         one2one = self.forward_feat([xi.detach() for xi in x], self.one2one_cv2, self.one2one_cv3)
         if not self.training:
             one2one = self.inference(one2one)
-            return one2one
+            if not self.export:
+                return one2one
+            else:
+                assert(self.max_det != -1)
+                boxes, scores, labels = ops.v10postprocess(one2one.permute(0, 2, 1), self.max_det)
+                return torch.cat([boxes, scores.unsqueeze(-1), labels.unsqueeze(-1)], dim=-1)
         else:
             one2many = super().forward(x)
             return {"one2many": one2many, "one2one": one2one}
