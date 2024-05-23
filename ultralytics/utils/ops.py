@@ -847,3 +847,18 @@ def clean_str(s):
         (str): a string with special characters replaced by an underscore _
     """
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
+
+def v10postprocess(preds, max_det, nc=80):
+    assert(4 + nc == preds.shape[-1])
+    boxes, scores = preds.split([4, nc], dim=-1)
+    max_scores = scores.amax(dim=-1)
+    max_scores, index = torch.topk(max_scores, max_det, axis=-1)
+    index = index.unsqueeze(-1)
+    boxes = torch.gather(boxes, dim=1, index=index.repeat(1, 1, boxes.shape[-1]))
+    scores = torch.gather(scores, dim=1, index=index.repeat(1, 1, scores.shape[-1]))
+
+    scores, index = torch.topk(scores.flatten(1), max_det, axis=-1)
+    labels = index % nc
+    index = index // nc
+    boxes = boxes.gather(dim=1, index=index.unsqueeze(-1).repeat(1, 1, boxes.shape[-1]))
+    return boxes, scores, labels

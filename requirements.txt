@@ -1,0 +1,9 @@
+torch
+torchvision
+onnx
+onnxruntime
+pycocotools
+PyYAML
+scipy
+onnxsim
+onnxruntime-gpu
