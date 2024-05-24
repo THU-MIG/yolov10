@@ -536,7 +536,8 @@ def entrypoint(debug=""):
         model = "yolov8n.pt"
         LOGGER.warning(f"WARNING ⚠️ 'model' argument is missing. Using default 'model={model}'.")
     overrides["model"] = model
-    stem = Path(model).stem.lower()
+    # stem = Path(model).stem.lower()
+    stem = model.lower()
     if "rtdetr" in stem:  # guess architecture
         from ultralytics import RTDETR
 
