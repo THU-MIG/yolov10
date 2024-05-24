@@ -11,7 +11,7 @@ Official PyTorch implementation of **YOLOv10**.
 
 [YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458).\
 Ao Wang, Hui Chen, Lihao Liu, Kai Chen, Zijia Lin, Jungong Han, and Guiguang Ding\
-[[`arXiv`](https://arxiv.org/abs/2405.14458)]
+[[`arXiv`](https://arxiv.org/abs/2405.14458)] [[`colab`](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/train-yolov10-object-detection-on-custom-dataset.ipynb#scrollTo=SaKTSzSWnG7s)]
 
 <details>
   <summary>
