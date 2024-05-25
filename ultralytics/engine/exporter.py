@@ -68,7 +68,7 @@ from ultralytics.data.dataset import YOLODataset
 from ultralytics.data.utils import check_det_dataset
 from ultralytics.nn.autobackend import check_class_names, default_class_names
 from ultralytics.nn.modules import C2f, Detect, RTDETRDecoder, v10Detect
-from ultralytics.nn.tasks import DetectionModel, SegmentationModel, WorldModel
+from ultralytics.nn.tasks import DetectionModel, SegmentationModel, WorldModel, YOLOv10DetectionModel
 from ultralytics.utils import (
     ARM64,
     DEFAULT_CFG,
@@ -231,6 +231,10 @@ class Exporter:
                 m.format = self.args.format
                 if isinstance(m, v10Detect):
                     m.max_det = self.args.max_det
+                    if self.args.nms and (onnx or engine):
+                        m.end2end = True
+                        m.iou_thres = self.args.iou if self.args.iou else 0.65
+                        m.conf_thres = self.args.conf if self.args.conf else 0.25
 
             elif isinstance(m, C2f) and not any((saved_model, pb, tflite, edgetpu, tfjs)):
                 # EdgeTPU does not support FlexSplitV while split provides cleaner ONNX graph
@@ -271,6 +275,10 @@ class Exporter:
             "batch": self.args.batch,
             "imgsz": self.imgsz,
             "names": model.names,
+            "nms": int(self.args.nms),  # json fails if store as bool value
+            "max_det": self.args.max_det,
+            "conf": self.args.conf if self.args.conf else 0.25,
+            "iou": self.args.iou if self.args.iou else 0.65,
         }  # model metadata
         if model.task == "pose":
             self.metadata["kpt_shape"] = model.model[-1].kpt_shape
@@ -366,6 +374,16 @@ class Exporter:
         f = str(self.file.with_suffix(".onnx"))
 
         output_names = ["output0", "output1"] if isinstance(self.model, SegmentationModel) else ["output0"]
+
+        if self.args.nms and isinstance(self.model, YOLOv10DetectionModel):
+            output_names = ['num_dets', 'det_boxes', 'det_scores', 'det_classes']
+            shapes = {
+                'num_dets': ["batch" if self.args.dynamic else self.args.batch, 1],
+                'det_boxes': ["batch" if self.args.dynamic else self.args.batch, self.args.max_det, 4],
+                'det_scores': ["batch" if self.args.dynamic else self.args.batch, self.args.max_det],
+                'det_classes': ["batch" if self.args.dynamic else self.args.batch, self.args.max_det],
+            }
+
         dynamic = self.args.dynamic
         if dynamic:
             dynamic = {"images": {0: "batch", 2: "height", 3: "width"}}  # shape(1,3,640,640)
@@ -374,6 +392,11 @@ class Exporter:
                 dynamic["output1"] = {0: "batch", 2: "mask_height", 3: "mask_width"}  # shape(1,32,160,160)
             elif isinstance(self.model, DetectionModel):
                 dynamic["output0"] = {0: "batch", 2: "anchors"}  # shape(1, 84, 8400)
+                if self.args.nms and isinstance(self.model, YOLOv10DetectionModel):
+                    dynamic["num_dets"] = {0: "batch"} 
+                    dynamic["det_boxes"] = {0: "batch"}
+                    dynamic["det_scores"] = {0: "batch"}
+                    dynamic["det_classes"] = {0: "batch"}
 
         torch.onnx.export(
             self.model.cpu() if dynamic else self.model,  # dynamic=True only compatible with cpu
@@ -390,6 +413,12 @@ class Exporter:
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
         # onnx.checker.check_model(model_onnx)  # check onnx model
+
+        if self.args.nms and isinstance(self.model, YOLOv10DetectionModel):
+            for output in model_onnx.graph.output:
+                for idx, dim in enumerate(output.type.tensor_type.shape.dim):
+                    if output.name in shapes and len(shapes[output.name]):
+                        dim.dim_param = str(shapes[output.name][idx])
 
         # Simplify
         if self.args.simplify:

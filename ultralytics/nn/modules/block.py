@@ -1,9 +1,12 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 """Block modules."""
 
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Graph, Tensor, Value
 
 from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
@@ -825,3 +828,54 @@ class SCDown(nn.Module):
 
     def forward(self, x):
         return self.cv2(self.cv1(x))
+
+class Efficient_TRT_NMS(torch.autograd.Function):
+    """NMS block for YOLO-fused model for TensorRT."""
+
+    @staticmethod
+    def forward(
+        ctx: Graph,
+        boxes: Tensor,
+        scores: Tensor,
+        iou_threshold: float = 0.65,
+        score_threshold: float = 0.25,
+        max_output_boxes: int = 100,
+        background_class: int = -1,
+        box_coding: int = 0,
+        plugin_version: str = "1",
+        score_activation: int = 0,
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        batch_size, num_boxes, num_classes = scores.shape
+        num_dets = torch.randint(0, max_output_boxes, (batch_size, 1), dtype=torch.int32)
+        boxes = torch.randn(batch_size, max_output_boxes, 4)
+        scores = torch.randn(batch_size, max_output_boxes)
+        labels = torch.randint(0, num_classes, (batch_size, max_output_boxes), dtype=torch.int32)
+
+        return num_dets, boxes, scores, labels
+
+    @staticmethod
+    def symbolic(
+        g,
+        boxes: Value,
+        scores: Value,
+        iou_threshold: float = 0.65,
+        score_threshold: float = 0.25,
+        max_output_boxes: int = 100,
+        background_class: int = -1,
+        box_coding: int = 0,
+        plugin_version: str = "1",
+        score_activation: int = 0,
+    ) -> Tuple[Value, Value, Value, Value]:
+        return g.op(
+            "TRT::EfficientNMS_TRT",
+            boxes,
+            scores,
+            iou_threshold_f=iou_threshold,
+            score_threshold_f=score_threshold,
+            max_output_boxes_i=max_output_boxes,
+            background_class_i=background_class,
+            box_coding_i=box_coding,
+            plugin_version_s=plugin_version,
+            score_activation_i=score_activation,
+            outputs=4,
+        )

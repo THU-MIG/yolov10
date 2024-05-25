@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
 from ultralytics.utils.tal import TORCH_1_10, dist2bbox, dist2rbox, make_anchors
-from .block import DFL, Proto, ContrastiveHead, BNContrastiveHead
+from .block import DFL, Proto, Efficient_TRT_NMS, ContrastiveHead, BNContrastiveHead
 from .conv import Conv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
@@ -496,7 +496,10 @@ class RTDETRDecoder(nn.Module):
 
 class v10Detect(Detect):
 
+    end2end = False
     max_det = -1
+    iou_thres = 0.65
+    conf_thres = 0.25
 
     def __init__(self, nc=80, ch=()):
         super().__init__(nc, ch)
@@ -519,8 +522,14 @@ class v10Detect(Detect):
                 return {"one2many": one2many, "one2one": one2one}
             else:
                 assert(self.max_det != -1)
-                boxes, scores, labels = ops.v10postprocess(one2one.permute(0, 2, 1), self.max_det, self.nc)
-                return torch.cat([boxes, scores.unsqueeze(-1), labels.unsqueeze(-1)], dim=-1)
+                if self.end2end:
+                    preds = one2one.permute(0, 2, 1)
+                    assert(4 + self.nc == preds.shape[-1])
+                    boxes, scores = preds.split([4, self.nc], dim=-1)
+                    return Efficient_TRT_NMS.apply(boxes, scores, self.iou_thres, self.conf_thres, self.max_det)
+                else:
+                    boxes, scores, labels = ops.v10postprocess(one2one.permute(0, 2, 1), self.max_det, self.nc)
+                    return torch.cat([boxes, scores.unsqueeze(-1), labels.unsqueeze(-1)], dim=-1)
         else:
             return {"one2many": one2many, "one2one": one2one}
 
