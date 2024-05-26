@@ -224,10 +224,9 @@ class BaseTrainer:
         """Initializes and sets the DistributedDataParallel parameters for training."""
         torch.cuda.set_device(RANK)
         self.device = torch.device("cuda", RANK)
-        # LOGGER.info(f'DDP info: RANK {RANK}, WORLD_SIZE {world_size}, DEVICE {self.device}')
-        os.environ["NCCL_BLOCKING_WAIT"] = "1"  # set to enforce timeout
+        os.environ["TORCH_NCCL_BLOCKING_WAIT"] = "1"  # set to enforce timeout
         dist.init_process_group(
-            "nccl" if dist.is_nccl_available() else "gloo",
+            backend="nccl" if dist.is_nccl_available() else "gloo",
             timeout=timedelta(seconds=10800),  # 3 hours
             rank=RANK,
             world_size=world_size,
@@ -659,7 +658,8 @@ class BaseTrainer:
 
     def resume_training(self, ckpt):
         """Resume YOLO training from given epoch and best fitness."""
-        if ckpt is None:
+        print(f"resume_training: {ckpt}")
+        if ckpt is None or not self.resume:
             return
         best_fitness = 0.0
         start_epoch = ckpt["epoch"] + 1
