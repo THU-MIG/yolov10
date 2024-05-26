@@ -658,7 +658,6 @@ class BaseTrainer:
 
     def resume_training(self, ckpt):
         """Resume YOLO training from given epoch and best fitness."""
-        print(f"resume_training: {ckpt}")
         if ckpt is None or not self.resume:
             return
         best_fitness = 0.0
