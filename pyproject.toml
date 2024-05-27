@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# THU-MIG YOLO v10 🚀, AGPL-3.0 license
 
 # Overview:
 # This pyproject.toml file manages the build, packaging, and distribution of the Ultralytics library.
@@ -24,22 +24,18 @@ build-backend = "setuptools.build_meta"
 
 # Project settings -----------------------------------------------------------------------------------------------------
 [project]
-name = "ultralytics"
+name = "yolov10"
 dynamic = ["version"]
-description = "Ultralytics YOLOv8 for SOTA object detection, multi-object tracking, instance segmentation, pose estimation and image classification."
+description = "THU-MIG YOLOv10 for SOTA Real-Time End-to-End Object Detection, based on Ultralytics YOLOv8."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { "text" = "AGPL-3.0" }
 keywords = ["machine-learning", "deep-learning", "computer-vision", "ML", "DL", "AI", "YOLO", "YOLOv3", "YOLOv5", "YOLOv8", "HUB", "Ultralytics"]
 authors = [
-    { name = "Glenn Jocher" },
-    { name = "Ayush Chaurasia" },
-    { name = "Jing Qiu" }
+    { name = "Ao Wang" },
 ]
 maintainers = [
-    { name = "Glenn Jocher" },
-    { name = "Ayush Chaurasia" },
-    { name = "Jing Qiu" }
+    { name = "Ao Wang" },
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -124,9 +120,9 @@ extra = [
 ]
 
 [project.urls]
-"Bug Reports" = "https://github.com/ultralytics/ultralytics/issues"
-"Funding" = "https://ultralytics.com"
-"Source" = "https://github.com/ultralytics/ultralytics/"
+"Bug Reports" = "https://github.com/THU-MIG/yolov10/issues"
+# "Funding" = "https://ultralytics.com"
+"Source" = "https://github.com/THU-MIG/yolov10/"
 
 [project.scripts]
 yolo = "ultralytics.cfg:entrypoint"
