@@ -18,6 +18,11 @@ class YOLO(Model):
             new_instance = YOLOWorld(path)
             self.__class__ = type(new_instance)
             self.__dict__ = new_instance.__dict__
+        elif "yolov10" in path.stem:
+            from ultralytics import YOLOv10
+            new_instance = YOLOv10(path)
+            self.__class__ = type(new_instance)
+            self.__dict__ = new_instance.__dict__
         else:
             # Continue with default YOLO initialization
             super().__init__(model=model, task=task, verbose=verbose)
