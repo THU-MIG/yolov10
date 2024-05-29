@@ -21,7 +21,7 @@ Over the past years, YOLOs have emerged as the predominant paradigm in the field
 </details>
 
 **UPDATES** 🔥
-- 2024/05/29: We identify a bug in existing HuggingFace demos. Please use `gr.Image(type="pil", label="Image")` rather than ``gr.Image(type="numpy", label="Image")`` for prediction.
+- 2024/05/29: We identify a bug in existing HuggingFace demos. Please use `gr.Image(type="pil", label="Image")` rather than ``gr.Image(type="numpy", label="Image")`` for prediction. Please refer to the [issue](https://github.com/THU-MIG/yolov10/issues/100#issuecomment-2136440517) for details.
 - 2024/05/29: Add the gradio demo for running the models locally. Thanks to [AK](https://x.com/_akhaliq)!
 - 2024/05/27: Thanks to [sujanshresstha](sujanshresstha) for the integration with [DeepSORT](https://github.com/sujanshresstha/YOLOv10_DeepSORT.git)!
 - 2024/05/27: We have updated the [checkpoints](https://github.com/THU-MIG/yolov10/releases/tag/v1.1) with other attributes, like class names, for ease of use.
