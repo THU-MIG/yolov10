@@ -8,3 +8,6 @@ scipy==1.13.0
 onnxsim==0.4.36
 onnxruntime-gpu==1.18.0
 gradio==4.31.5
+opencv-python==4.9.0.80
+psutil==5.9.8
+py-cpuinfo==9.0.0
