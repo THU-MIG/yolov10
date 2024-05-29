@@ -51,6 +51,7 @@ pip install -e .
 ```
 ## Demo
 ```
+wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt
 python app.py
 # Please visit http://127.0.0.1:7860
 ```
