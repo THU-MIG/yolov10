@@ -2,21 +2,57 @@
 # Thanks to @kadirnar
 
 import gradio as gr
-from ultralytics import YOLOv10 
+from ultralytics import YOLOv10
+import cv2
+import tempfile
 
 def yolov10_inference(image, model_path, image_size, conf_threshold):
     model = YOLOv10(model_path)
+    results = model.predict(source=image, imgsz=image_size, conf=conf_threshold)
+    annotated_image = results[0].plot()
+    return annotated_image[:, :, ::-1], None
+
+def yolov10_inference_video(video, model_path, image_size, conf_threshold):
+    model = YOLOv10(model_path)
+    video_path = tempfile.mktemp(suffix=".mp4")
+    with open(video_path, "wb") as f:
+        with open(video, "rb") as g:
+            f.write(g.read())
+
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    output_video_path = tempfile.mktemp(suffix=".mp4")
+    out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        results = model.predict(source=frame, imgsz=image_size, conf=conf_threshold)
+        annotated_frame = results[0].plot()
+        out.write(annotated_frame)
+
+    cap.release()
+    out.release()
     
-    model.predict(source=image, imgsz=image_size, conf=conf_threshold, save=True)
-    
-    return model.predictor.plotted_img[:, :, ::-1]
+    return None, output_video_path
 
 def app():
     with gr.Blocks():
         with gr.Row():
             with gr.Column():
-                image = gr.Image(type="pil", label="Image")
-                
+                input_type = gr.Radio(
+                    choices=["Image", "Video"],
+                    value="Image",
+                    label="Input Type",
+                )
+                image = gr.Image(type="pil", label="Image", visible=True)
+                video = gr.Video(label="Video", visible=False)
+
                 model_id = gr.Dropdown(
                     label="Model",
                     choices=[
@@ -46,17 +82,33 @@ def app():
                 yolov10_infer = gr.Button(value="Detect Objects")
 
             with gr.Column():
-                output_image = gr.Image(type="numpy", label="Annotated Image")
+                output_image = gr.Image(type="numpy", label="Annotated Image", visible=True)
+                output_video = gr.Video(label="Annotated Video", visible=False)
+
+        def update_visibility(input_type):
+            image = gr.update(visible=True) if input_type == "Image" else gr.update(visible=False)
+            video = gr.update(visible=False) if input_type == "Image" else gr.update(visible=True)
+            output_image = gr.update(visible=True) if input_type == "Image" else gr.update(visible=False)
+            output_video = gr.update(visible=False) if input_type == "Image" else gr.update(visible=True)
+
+            return image, video, output_image, output_video
+
+        input_type.change(
+            fn=update_visibility,
+            inputs=[input_type],
+            outputs=[image, video, output_image, output_video],
+        )
+
+        def run_inference(image, video, model_id, image_size, conf_threshold, input_type):
+            if input_type == "Image":
+                return yolov10_inference(image, model_id, image_size, conf_threshold)
+            else:
+                return yolov10_inference_video(video, model_id, image_size, conf_threshold)
 
         yolov10_infer.click(
-            fn=yolov10_inference,
-            inputs=[
-                image,
-                model_id,
-                image_size,
-                conf_threshold,
-            ],
-            outputs=[output_image],
+            fn=run_inference,
+            inputs=[image, video, model_id, image_size, conf_threshold, input_type],
+            outputs=[output_image, output_video],
         )
 
         gr.Examples(
