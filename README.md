@@ -1,4 +1,4 @@
-# [YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458)
+# [YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458) 🚀
 
 
 Official PyTorch implementation of **YOLOv10**.
@@ -29,7 +29,7 @@ Over the past years, YOLOs have emerged as the predominant paradigm in the field
 - 2024/05/25: Add [Transformers.js demo](https://huggingface.co/spaces/Xenova/yolov10-web) and onnx weights(yolov10[n](https://huggingface.co/onnx-community/yolov10n)/[s](https://huggingface.co/onnx-community/yolov10s)/[m](https://huggingface.co/onnx-community/yolov10m)/[b](https://huggingface.co/onnx-community/yolov10b)/[l](https://huggingface.co/onnx-community/yolov10l)/[x](https://huggingface.co/onnx-community/yolov10x)). Thanks to [xenova](https://github.com/xenova)!
 - 2024/05/25: Add [colab demo](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/train-yolov10-object-detection-on-custom-dataset.ipynb#scrollTo=SaKTSzSWnG7s), [HuggingFace Demo](https://huggingface.co/spaces/kadirnar/Yolov10), and [HuggingFace Model Page](https://huggingface.co/kadirnar/Yolov10). Thanks to [SkalskiP](https://github.com/SkalskiP) and [kadirnar](https://github.com/kadirnar)! 
 
-## Performance
+## Performance 📈
 COCO
 | Model | Test Size | #Params | FLOPs | AP<sup>val</sup> | Latency |
 |:---------------|:----:|:---:|:--:|:--:|:--:|
@@ -40,7 +40,7 @@ COCO
 | [YOLOv10-L](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10l.pt) |   640  |     24.4M   |  120.3G   |     53.2%     | 7.28ms |
 | [YOLOv10-X](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10x.pt) |   640  |     29.5M    |   160.4G   |     54.4%     | 10.70ms |
 
-## Installation
+## Installation 💻
 `conda` virtual environment is recommended. 
 ```
 conda create -n yolov10 python=3.9
@@ -48,30 +48,30 @@ conda activate yolov10
 pip install -r requirements.txt
 pip install -e .
 ```
-## Demo
+## Demo 🛠️
 ```
 wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt
 python app.py
 # Please visit http://127.0.0.1:7860
 ```
 
-## Validation
+## Validation ✔️
 [`yolov10n.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10n.pt)  [`yolov10s.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt)  [`yolov10m.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10m.pt)  [`yolov10b.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10b.pt)  [`yolov10l.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10l.pt)  [`yolov10x.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10x.pt)  
 ```
 yolo val model=yolov10n/s/m/b/l/x.pt data=coco.yaml batch=256
 ```
 
-## Training 
+## Training 🏋️
 ```
 yolo detect train data=coco.yaml model=yolov10n/s/m/b/l/x.yaml epochs=500 batch=256 imgsz=640 device=0,1,2,3,4,5,6,7
 ```
 
-## Prediction
+## Prediction 🔍
 ```
 yolo predict model=yolov10n/s/m/b/l/x.pt
 ```
 
-## Export
+## Export 📦
 ```
 # End-to-End ONNX
 yolo export model=yolov10n/s/m/b/l/x.pt format=onnx opset=13 simplify
@@ -86,13 +86,13 @@ trtexec --onnx=yolov10n/s/m/b/l/x.onnx --saveEngine=yolov10n/s/m/b/l/x.engine --
 yolo predict model=yolov10n/s/m/b/l/x.engine
 ```
 
-## Acknowledgement
+## Acknowledgement 🙏
 
 The code base is built with [ultralytics](https://github.com/ultralytics/ultralytics) and [RT-DETR](https://github.com/lyuwenyu/RT-DETR).
 
 Thanks for the great implementations! 
 
-## Citation
+## Citation 📜
 
 If our code or models help your work, please cite our paper:
 ```BibTeX
