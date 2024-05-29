@@ -7,3 +7,4 @@ PyYAML==6.0.1
 scipy==1.13.0
 onnxsim==0.4.36
 onnxruntime-gpu==1.18.0
+gradio==4.31.5
