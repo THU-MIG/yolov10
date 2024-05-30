@@ -70,6 +70,8 @@ yolo detect train data=coco.yaml model=yolov10n/s/m/b/l/x.yaml epochs=500 batch=
 
 ## Prediction
 ```
+# Note that a smaller confidence threshold can be set to detect smaller objects or objects in the distance.
+# Please refer to [here](https://github.com/THU-MIG/yolov10/issues/136) for details.
 yolo predict model=yolov10n/s/m/b/l/x.pt
 ```
 
