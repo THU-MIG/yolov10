@@ -1,4 +1,4 @@
-# Ackownledgement: https://huggingface.co/spaces/kadirnar/Yolov10/blob/main/app.py
+# Acknowledgement: https://huggingface.co/spaces/kadirnar/Yolov10/blob/main/app.py
 # Thanks to @kadirnar
 
 import gradio as gr
@@ -40,6 +40,10 @@ def yolov10_inference_video(video, model_path, image_size, conf_threshold):
     out.release()
     
     return None, output_video_path
+
+def yolov10_inference_for_examples(image, model_path, image_size, conf_threshold):
+    annotated_image, _ = yolov10_inference(image, model_path, image_size, conf_threshold)
+    return annotated_image
 
 def app():
     with gr.Blocks():
@@ -126,7 +130,7 @@ def app():
                     0.25,
                 ],
             ],
-            fn=yolov10_inference,
+            fn=yolov10_inference_for_examples,
             inputs=[
                 image,
                 model_id,
