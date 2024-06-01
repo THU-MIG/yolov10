@@ -4,8 +4,8 @@
 import gradio as gr
 from ultralytics import YOLOv10 
 
-def yolov10_inference(image, model_path, image_size, conf_threshold):
-    model = YOLOv10(model_path)
+def yolov10_inference(image, image_size, conf_threshold):
+    model = YOLOv10.from_pretrained("jameslahm/yolov10n")
     
     model.predict(source=image, imgsz=image_size, conf=conf_threshold, save=True)
     
