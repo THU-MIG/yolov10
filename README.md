@@ -101,7 +101,7 @@ model = YOLOv10()
 
 model.train(data='coco.yaml', epochs=500, batch=256, imgsz=640)
 # Note that you can upload your trained model to HuggingFace Hub like below
-# model.push_to_hub("reponame")
+# model.push_to_hub("reponame", config={"model": "yolov10n/s/m/b/l/x.yaml"})
 ```
 
 ## Prediction
