@@ -104,6 +104,18 @@ model.train(data='coco.yaml', epochs=500, batch=256, imgsz=640)
 # model.push_to_hub("reponame")
 ```
 
+## Push to hub to 🤗
+
+Optionally, you can push your fine-tuned model to the [Hugging Face hub](https://huggingface.co/) as a public or private model:
+
+```python
+# let's say you have fine-tuned a model for crop detection
+model.push_to_hub("<your-hf-username-or-organization/yolov10-finetuned-crop-detection")
+
+# you can also pass `private=True` if you don't want everyone to see your model
+model.push_to_hub("<your-hf-username-or-organization/yolov10-finetuned-crop-detection", private=True)
+```
+
 ## Prediction
 Note that a smaller confidence threshold can be set to detect smaller objects or objects in the distance. Please refer to [here](https://github.com/THU-MIG/yolov10/issues/136) for details.
 ```
