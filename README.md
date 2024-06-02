@@ -65,9 +65,9 @@ python app.py
 ```
 
 ## Validation
-[`yolov10n.pt`](https://huggingface.co/jameslahm/yolov10n)  [`yolov10s.pt`](https://huggingface.co/jameslahm/yolov10s)  [`yolov10m.pt`](https://huggingface.co/jameslahm/yolov10m)  [`yolov10b.pt`](https://huggingface.co/jameslahm/yolov10b)  [`yolov10l.pt`](https://huggingface.co/jameslahm/yolov10l)  [`yolov10x.pt`](https://huggingface.co/jameslahm/yolov10x)  
+[`yolov10n`](https://huggingface.co/jameslahm/yolov10n)  [`yolov10s`](https://huggingface.co/jameslahm/yolov10s)  [`yolov10m`](https://huggingface.co/jameslahm/yolov10m)  [`yolov10b`](https://huggingface.co/jameslahm/yolov10b)  [`yolov10l`](https://huggingface.co/jameslahm/yolov10l)  [`yolov10x`](https://huggingface.co/jameslahm/yolov10x)  
 ```
-yolo val size="nano" data=coco.yaml batch=256
+yolo val model=yolov10n/s/m/b/l/x.pt data=coco.yaml batch=256
 ```
 
 Or
@@ -76,7 +76,7 @@ from ultralytics import YOLOv10
 
 model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # or
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}.pt')
+model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
 
 model.val(data='coco.yaml', batch=256)
 ```
@@ -96,7 +96,7 @@ model = YOLOv10()
 # pretrained weights like below
 # model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # Or
-# model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}.pt')
+# model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
 
 model.train(data='coco.yaml', epochs=500, batch=256, imgsz=640)
 # Note that you can upload your trained model to HuggingFace Hub like below
@@ -115,7 +115,7 @@ from ultralytics import YOLOv10
 
 model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # or
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}.pt')
+model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
 
 model.predict()
 ```
