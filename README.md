@@ -67,6 +67,7 @@ python app.py
 ## Validation
 [`yolov10n`](https://huggingface.co/jameslahm/yolov10n)  [`yolov10s`](https://huggingface.co/jameslahm/yolov10s)  [`yolov10m`](https://huggingface.co/jameslahm/yolov10m)  [`yolov10b`](https://huggingface.co/jameslahm/yolov10b)  [`yolov10l`](https://huggingface.co/jameslahm/yolov10l)  [`yolov10x`](https://huggingface.co/jameslahm/yolov10x)  
 ```
+wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt
 yolo val model=yolov10n/s/m/b/l/x.pt data=coco.yaml batch=256
 ```
 
