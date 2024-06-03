@@ -161,8 +161,14 @@ with gradio_app:
     YOLOv10: Real-Time End-to-End Object Detection
     </h1>
     """)
+    gr.HTML(
+        """
+        <h3 style='text-align: center'>
+        <a href='https://arxiv.org/abs/2405.14458' target='_blank'>arXiv</a> | <a href='https://github.com/THU-MIG/yolov10' target='_blank'>github</a>
+        </h3>
+        """)
     with gr.Row():
         with gr.Column():
             app()
-
-gradio_app.launch(debug=True)
+if __name__ == '__main__':
+    gradio_app.launch()
