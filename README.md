@@ -23,7 +23,7 @@ Over the past years, YOLOs have emerged as the predominant paradigm in the field
 ## Notes
 - 2024/05/31: Please use the [exported format](https://github.com/THU-MIG/yolov10?tab=readme-ov-file#export) for benchmark. In the non-exported format, e.g., pytorch, the speed of YOLOv10 is biased because the unnecessary `cv2` and `cv3` operations in the `v10Detect` are executed during inference.
 - 2024/05/30: We provide [some clarifications and suggestions](https://github.com/THU-MIG/yolov10/issues/136) for detecting smaller objects or objects in the distance with YOLOv10. Thanks to [SkalskiP](https://github.com/SkalskiP)!
-- 2024/05/27: We have updated the [checkpoints](https://github.com/THU-MIG/yolov10/releases/tag/v1.1) with other attributes, like class names and training args, for ease of use.
+- 2024/05/27: We have updated the [checkpoints](https://huggingface.co/collections/jameslahm/yolov10-665b0d90b0b5bb85129460c2) with other attributes, like class names and training args, for ease of use.
 
 ## UPDATES 🔥
 - 2024/06/01: Thanks to [ErlanggaYudiPradana](https://github.com/rlggyp) for the integration with [C++ | OpenVINO | OpenCV](https://github.com/rlggyp/YOLOv10-OpenVINO-CPP-Inference)
@@ -44,12 +44,12 @@ COCO
 
 | Model | Test Size | #Params | FLOPs | AP<sup>val</sup> | Latency |
 |:---------------|:----:|:---:|:--:|:--:|:--:|
-| [YOLOv10-N](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10n.pt) |   640  |     2.3M    |   6.7G   |     38.5%     | 1.84ms |
-| [YOLOv10-S](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt) |   640  |     7.2M    |   21.6G  |     46.3%     | 2.49ms |
-| [YOLOv10-M](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10m.pt) |   640  |     15.4M   |   59.1G  |     51.1%     | 4.74ms |
-| [YOLOv10-B](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10b.pt) |   640  |     19.1M   |  92.0G |     52.5%     | 5.74ms |
-| [YOLOv10-L](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10l.pt) |   640  |     24.4M   |  120.3G   |     53.2%     | 7.28ms |
-| [YOLOv10-X](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10x.pt) |   640  |     29.5M    |   160.4G   |     54.4%     | 10.70ms |
+| [YOLOv10-N](https://huggingface.co/jameslahm/yolov10n) |   640  |     2.3M    |   6.7G   |     38.5%     | 1.84ms |
+| [YOLOv10-S](https://huggingface.co/jameslahm/yolov10s) |   640  |     7.2M    |   21.6G  |     46.3%     | 2.49ms |
+| [YOLOv10-M](https://huggingface.co/jameslahm/yolov10m) |   640  |     15.4M   |   59.1G  |     51.1%     | 4.74ms |
+| [YOLOv10-B](https://huggingface.co/jameslahm/yolov10b) |   640  |     19.1M   |  92.0G |     52.5%     | 5.74ms |
+| [YOLOv10-L](https://huggingface.co/jameslahm/yolov10l) |   640  |     24.4M   |  120.3G   |     53.2%     | 7.28ms |
+| [YOLOv10-X](https://huggingface.co/jameslahm/yolov10x) |   640  |     29.5M    |   160.4G   |     54.4%     | 10.70ms |
 
 ## Installation
 `conda` virtual environment is recommended. 
@@ -61,14 +61,14 @@ pip install -e .
 ```
 ## Demo
 ```
-wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt
 python app.py
 # Please visit http://127.0.0.1:7860
 ```
 
 ## Validation
-[`yolov10n.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10n.pt)  [`yolov10s.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt)  [`yolov10m.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10m.pt)  [`yolov10b.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10b.pt)  [`yolov10l.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10l.pt)  [`yolov10x.pt`](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10x.pt)  
+[`yolov10n`](https://huggingface.co/jameslahm/yolov10n)  [`yolov10s`](https://huggingface.co/jameslahm/yolov10s)  [`yolov10m`](https://huggingface.co/jameslahm/yolov10m)  [`yolov10b`](https://huggingface.co/jameslahm/yolov10b)  [`yolov10l`](https://huggingface.co/jameslahm/yolov10l)  [`yolov10x`](https://huggingface.co/jameslahm/yolov10x)  
 ```
+wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10s.pt
 yolo val model=yolov10n/s/m/b/l/x.pt data=coco.yaml batch=256
 ```
 
@@ -78,7 +78,7 @@ from ultralytics import YOLOv10
 
 model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # or
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}.pt')
+model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
 
 model.val(data='coco.yaml', batch=256)
 ```
@@ -98,11 +98,23 @@ model = YOLOv10()
 # pretrained weights like below
 # model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # Or
-# model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}.pt')
+# model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
 
 model.train(data='coco.yaml', epochs=500, batch=256, imgsz=640)
 # Note that you can upload your trained model to HuggingFace Hub like below
 # model.push_to_hub("reponame", config={"model": "yolov10n/s/m/b/l/x.yaml"})
+```
+
+## Push to hub to 🤗
+
+Optionally, you can push your fine-tuned model to the [Hugging Face hub](https://huggingface.co/) as a public or private model:
+
+```python
+# let's say you have fine-tuned a model for crop detection
+model.push_to_hub("<your-hf-username-or-organization/yolov10-finetuned-crop-detection")
+
+# you can also pass `private=True` if you don't want everyone to see your model
+model.push_to_hub("<your-hf-username-or-organization/yolov10-finetuned-crop-detection", private=True)
 ```
 
 ## Prediction
@@ -117,7 +129,7 @@ from ultralytics import YOLOv10
 
 model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # or
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}.pt')
+model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
 
 model.predict()
 ```

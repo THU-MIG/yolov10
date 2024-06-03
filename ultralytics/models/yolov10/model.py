@@ -4,7 +4,9 @@ from .val import YOLOv10DetectionValidator
 from .predict import YOLOv10DetectionPredictor
 from .train import YOLOv10DetectionTrainer
 
-class YOLOv10(Model):
+from huggingface_hub import PyTorchModelHubMixin
+
+class YOLOv10(Model, PyTorchModelHubMixin, library_name="ultralytics", repo_url="https://github.com/THU-MIG/yolov10", tags=["object-detection", "yolov10"]):
 
     def __init__(self, model="yolov10n.pt", task=None, verbose=False, 
                  names=None):
