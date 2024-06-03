@@ -496,7 +496,7 @@ class RTDETRDecoder(nn.Module):
 
 class v10Detect(Detect):
 
-    max_det = -1
+    max_det = 300
 
     def __init__(self, nc=80, ch=()):
         super().__init__(nc, ch)
