@@ -1,14 +1,11 @@
-# Acknowledgement: https://huggingface.co/spaces/kadirnar/Yolov10/blob/main/app.py
-# Thanks to @kadirnar
-
 import gradio as gr
-from ultralytics import YOLOv10
 import cv2
 import tempfile
+from ultralytics import YOLOv10
 
 
-def yolov10_inference(image, video, model_path, image_size, conf_threshold):
-    model = YOLOv10(model_path)
+def yolov10_inference(image, video, model_id, image_size, conf_threshold):
+    model = YOLOv10.from_pretrained(f'jameslahm/{model_id}')
     if image:
         results = model.predict(source=image, imgsz=image_size, conf=conf_threshold)
         annotated_image = results[0].plot()
@@ -62,14 +59,14 @@ def app():
                 model_id = gr.Dropdown(
                     label="Model",
                     choices=[
-                        "yolov10n.pt",
-                        "yolov10s.pt",
-                        "yolov10m.pt",
-                        "yolov10b.pt",
-                        "yolov10l.pt",
-                        "yolov10x.pt",
+                        "yolov10n",
+                        "yolov10s",
+                        "yolov10m",
+                        "yolov10b",
+                        "yolov10l",
+                        "yolov10x",
                     ],
-                    value="yolov10s.pt",
+                    value="yolov10m",
                 )
                 image_size = gr.Slider(
                     label="Image Size",
@@ -82,7 +79,7 @@ def app():
                     label="Confidence Threshold",
                     minimum=0.0,
                     maximum=1.0,
-                    step=0.1,
+                    step=0.05,
                     value=0.25,
                 )
                 yolov10_infer = gr.Button(value="Detect Objects")
@@ -111,6 +108,7 @@ def app():
             else:
                 return yolov10_inference(None, video, model_id, image_size, conf_threshold)
 
+
         yolov10_infer.click(
             fn=run_inference,
             inputs=[image, video, model_id, image_size, conf_threshold, input_type],
@@ -121,13 +119,13 @@ def app():
             examples=[
                 [
                     "ultralytics/assets/bus.jpg",
-                    "yolov10s.pt",
+                    "yolov10s",
                     640,
                     0.25,
                 ],
                 [
                     "ultralytics/assets/zidane.jpg",
-                    "yolov10s.pt",
+                    "yolov10s",
                     640,
                     0.25,
                 ],
@@ -140,7 +138,7 @@ def app():
                 conf_threshold,
             ],
             outputs=[output_image],
-            cache_examples=True,
+            cache_examples='lazy',
         )
 
 gradio_app = gr.Blocks()
