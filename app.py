@@ -7,15 +7,6 @@ import cv2
 import tempfile
 
 
-def check_file_size(file, max_file_size=20*1024*1024): # 20MB
-    file_size = 0
-    if file:
-        with open(file, "rb") as f:
-            file_size = len(f.read())
-    if file_size > max_file_size:
-        raise gr.Error("File size exceeds the 20MB limit. Please try with another file.")
-
-
 def yolov10_inference(image, video, model_path, image_size, conf_threshold):
     model = YOLOv10(model_path)
     if image:
@@ -23,8 +14,7 @@ def yolov10_inference(image, video, model_path, image_size, conf_threshold):
         annotated_image = results[0].plot()
         return annotated_image[:, :, ::-1], None
     else:
-        check_file_size(video)
-        video_path = tempfile.mktemp(suffix=".mp4")
+        video_path = tempfile.mktemp(suffix=".webm")
         with open(video_path, "wb") as f:
             with open(video, "rb") as g:
                 f.write(g.read())
@@ -34,8 +24,8 @@ def yolov10_inference(image, video, model_path, image_size, conf_threshold):
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        output_video_path = tempfile.mktemp(suffix=".mp4")
-        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+        output_video_path = tempfile.mktemp(suffix=".webm")
+        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'vp80'), fps, (frame_width, frame_height))
 
         while cap.isOpened():
             ret, frame = cap.read()
