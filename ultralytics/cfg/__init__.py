@@ -1,6 +1,7 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import contextlib
+import os
 import shutil
 import subprocess
 import sys
@@ -553,7 +554,12 @@ def entrypoint(debug=""):
     elif "yolov10" in stem:
         from ultralytics import YOLOv10
 
-        model = YOLOv10(model)
+        # Special case for the HuggingFace Hub
+        split_path = model.split('/')
+        if len(split_path) == 2 and (not os.path.exists(model)):
+            model = YOLOv10.from_pretrained(model)
+        else:
+            model = YOLOv10(model)
     else:
         from ultralytics import YOLO
 
