@@ -48,14 +48,13 @@ def app():
     with gr.Blocks():
         with gr.Row():
             with gr.Column():
+                image = gr.Image(type="pil", label="Image", visible=True)
+                video = gr.Video(label="Video", visible=False)
                 input_type = gr.Radio(
                     choices=["Image", "Video"],
                     value="Image",
                     label="Input Type",
                 )
-                image = gr.Image(type="pil", label="Image", visible=True)
-                video = gr.Video(label="Video", visible=False)
-
                 model_id = gr.Dropdown(
                     label="Model",
                     choices=[
