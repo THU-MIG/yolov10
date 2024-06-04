@@ -612,7 +612,7 @@ def get_ubuntu_version():
                 return re.search(r'VERSION_ID="(\d+\.\d+)"', f.read())[1]
 
 
-def get_user_config_dir(sub_dir="Ultralytics"):
+def get_user_config_dir(sub_dir="yolov10"):
     """
     Return the appropriate config directory based on the environment operating system.
 
