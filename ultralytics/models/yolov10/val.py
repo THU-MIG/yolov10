@@ -14,6 +14,7 @@ class YOLOv10DetectionValidator(DetectionValidator):
         if isinstance(preds, (list, tuple)):
             preds = preds[0]
         
+        # Acknowledgement: Thanks to sanha9999 in #190 and #181!
         if preds.shape[-1] == 6:
             return preds
         else:
