@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Union
+import re
 
 from ultralytics.utils import (
     ASSETS,
@@ -551,7 +552,11 @@ def entrypoint(debug=""):
         from ultralytics import SAM
 
         model = SAM(model)
-    elif "yolov10" in stem:
+    elif re.search("v3|v5|v6|v8|v9", stem):
+        from ultralytics import YOLO
+
+        model = YOLO(model, task=task)
+    else:
         from ultralytics import YOLOv10
 
         # Special case for the HuggingFace Hub
@@ -560,10 +565,6 @@ def entrypoint(debug=""):
             model = YOLOv10.from_pretrained(model)
         else:
             model = YOLOv10(model)
-    else:
-        from ultralytics import YOLO
-
-        model = YOLO(model, task=task)
     if isinstance(overrides.get("pretrained"), str):
         model.load(overrides["pretrained"])
 
