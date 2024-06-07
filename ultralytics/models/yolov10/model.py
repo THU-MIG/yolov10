@@ -7,9 +7,7 @@ from .train import YOLOv10DetectionTrainer
 from huggingface_hub import PyTorchModelHubMixin
 from .card import card_template_text
 
-class YOLOv10(Model, PyTorchModelHubMixin, library_name="ultralytics", \
-              repo_url="https://github.com/THU-MIG/yolov10", \
-              model_card_template=card_template_text):
+class YOLOv10(Model, PyTorchModelHubMixin, model_card_template=card_template_text):
 
     def __init__(self, model="yolov10n.pt", task=None, verbose=False, 
                  names=None):

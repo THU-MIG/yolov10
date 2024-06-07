@@ -1,6 +1,8 @@
 card_template_text = """
 ---
 license: agpl-3.0
+library_name: ultralytics
+repo_url: https://github.com/THU-MIG/yolov10
 tags:
 - object-detection
 - computer-vision
