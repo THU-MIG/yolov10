@@ -345,7 +345,8 @@ class BasePredictor:
         if self.args.show:
             self.show(str(p))
         if self.args.save:
-            self.save_predicted_images(str(self.save_dir / p.name), frame)
+            
+            self.save_predicted_images(str(self.save_dir / (p.name or "tmp.jpg")), frame)
 
         return string
 
@@ -375,9 +376,6 @@ class BasePredictor:
 
         # Save images
         else:
-            if save_path.split("/")[-1].startswith("predict"):
-                # havn't provide file name
-                save_path = save_path + "/tmp.jpg"
             cv2.imwrite(save_path, im)
 
     def show(self, p=""):
