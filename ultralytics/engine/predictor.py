@@ -345,7 +345,6 @@ class BasePredictor:
         if self.args.show:
             self.show(str(p))
         if self.args.save:
-            
             self.save_predicted_images(str(self.save_dir / (p.name or "tmp.jpg")), frame)
 
         return string
