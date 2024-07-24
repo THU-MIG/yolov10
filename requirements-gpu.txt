@@ -78,7 +78,7 @@ six==1.16.0
 sniffio==1.3.1
 starlette==0.37.2
 sympy==1.13.1
-thop==0.1.1
+thop==0.1.1.post2209072238
 tomlkit==0.12.0
 toolz==0.12.1
 tqdm==4.66.4
