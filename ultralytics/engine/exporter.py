@@ -355,9 +355,7 @@ class Exporter:
         """YOLOv8 ONNX export."""
         requirements = ["onnx>=1.12.0"]
         if self.args.simplify:
-            requirements += ["onnxslim==0.1.28", "onnxruntime" + ("-gpu" if torch.cuda.is_available() else "")]
-            if ARM64:
-                check_requirements("cmake")  # 'cmake' is needed to build onnxsim on aarch64
+            requirements += ["onnxslim==0.1.31", "onnxruntime" + ("-gpu" if torch.cuda.is_available() else "")]
         check_requirements(requirements)
         import onnx  # noqa
 
@@ -744,7 +742,7 @@ class Exporter:
                 "onnx>=1.12.0",
                 "onnx2tf>=1.15.4,<=1.17.5",
                 "sng4onnx>=1.0.1",
-                "onnxslim==0.1.28",
+                "onnxslim==0.1.31",
                 "onnx_graphsurgeon>=0.3.26",
                 "tflite_support",
                 "flatbuffers>=23.5.26,<100",  # update old 'flatbuffers' included inside tensorflow package
