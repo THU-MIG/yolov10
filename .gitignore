@@ -85,9 +85,6 @@ ipython_config.py
 # Profiling
 *.pclprof
 
-# pyenv
-.python-version
-
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
@@ -138,14 +135,12 @@ dmypy.json
 .pyre/
 
 # datasets and projects
-datasets/
-runs/
 wandb/
 tests/
 .DS_Store
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
-weights/
+weights/*
 *.weights
 *.pt
 *.pb
