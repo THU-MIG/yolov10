@@ -1,0 +1,14 @@
+path: datasets/sugarcane # dataset root dir
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 2
+names: ['pineapple', 'weed']
+
+roboflow:
+  workspace: hoku
+  project: pineapple-thsih
+  version: 7
+  license: MIT
+  url: https://universe.roboflow.com/hoku/pineapple-thsih/dataset/7

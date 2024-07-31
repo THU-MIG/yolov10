@@ -1,0 +1,14 @@
+path: datasets/sugarcane # dataset root dir
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 2
+names: ['sugarcane', 'weed']
+
+roboflow:
+  workspace: hoku
+  project: sugarcane-3vhxz
+  version: 11
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/hoku/sugarcane-3vhxz/dataset/11
