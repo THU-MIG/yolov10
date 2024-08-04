@@ -1,8 +1,0 @@
-# 全てのファイルを除外
-*/*
-
-# 例外
-!.gitignore
-!README.md
-!**/data.yaml
-!**/README*.txt

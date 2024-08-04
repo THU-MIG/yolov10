@@ -91,7 +91,23 @@ yolo settings datasets_dir=.
 
 事前学習済みモデルとして`yolov10x.pt`を使用するので、[公式GitHubのリリース](https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10x.pt)からダウンロードして`weights`ディレクトリに配置してください。
 
-また、学習に使用するデータセットは[`datasets/README.md`](./datasets/README.md)に従い、`datasets`ディレクトリに配置してください。
+学習に使用するデータセットはRoboflowというサービスを使用して作成しています。
+
+学習や評価に使用するデータセットは、
+
+- [サトウキビ](https://universe.roboflow.com/hoku/sugarcane-3vhxz/dataset/11)
+- [パイナップル](https://universe.roboflow.com/hoku/pineapple-thsih/dataset/7)
+
+にありますが、手動でダウンロードするのは面倒なので`huggingface`にdatasetsをまとめてあります。
+
+下記コマンドを実行して、datasetsをダウンロードしてください。
+
+```bash
+# Make sure you have git-lfs installed (https://git-lfs.com)
+git lfs install
+
+git clone https://huggingface.co/datasets/TechC-SugarCane/yolov10-datasets
+```
 
 学習後の結果は`runs/detect/<name(番号)>`に保存されます。
 
@@ -100,10 +116,10 @@ yolo settings datasets_dir=.
 
 ```bash
 # sugarcane
-yolo detect train cfg='cfg/sugarcane.yaml' data=datasets/sugarcane/data.yaml model=weights/yolov10x.pt name='yolov10x-sugarcane' epochs=300 batch=16 imgsz=640 device=0
+yolo detect train cfg='cfg/sugarcane.yaml' data=yolov10-datasets/sugarcane/data.yaml model=weights/yolov10x.pt name='yolov10x-sugarcane' epochs=300 batch=16 imgsz=640 device=0
 
 # pineapple
-yolo detect train cfg='cfg/pineapple.yaml' data=datasets/pineapple/data.yaml model=weights/yolov10x.pt name='yolov10x-pineapple' epochs=300 batch=16 imgsz=640 device=0
+yolo detect train cfg='cfg/pineapple.yaml' data=yolov10-datasets/pineapple/data.yaml model=weights/yolov10x.pt name='yolov10x-pineapple' epochs=300 batch=16 imgsz=640 device=0
 ```
 
 ※ 上記を実行すると`yolov8n.pt`がダウンロードされますが、AMPというものの確認用に追加されているだけらしいので気にしなくて大丈夫です。
