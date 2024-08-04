@@ -107,6 +107,9 @@ yolo settings datasets_dir=.
 git lfs install
 
 git clone https://huggingface.co/datasets/TechC-SugarCane/yolov10-datasets
+
+# git push時に発生するエラーを無効化
+git config lfs.https://github.com/TechC-SugarCane/train-YOLOv10.git/info/lfs.locksverify false
 ```
 
 学習後の結果は`runs/detect/<name(番号)>`に保存されます。
