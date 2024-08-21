@@ -44,6 +44,8 @@ cd train-YOLOv10
 
 ### 2. Pythonの環境構築
 
+`pyenv`を使うので、パソコンに入っていない人は[CONTRIBUTING.md](https://github.com/TechC-SugarCane/.github/blob/main/CONTRIBUTING.md#pyenv-pyenv-win-%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)を参考にしながらインストールしてください。
+
 ```bash
 pyenv install
 ```
