@@ -76,7 +76,11 @@ pip install -r requirements-cpu.txt
 
 # GPUで推論を行う場合
 pip install -r requirements-gpu.txt
+```
 
+リポジトリをビルド
+
+```
 # 共通
 pip install -e .
 ```
