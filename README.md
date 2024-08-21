@@ -120,17 +120,17 @@ git config lfs.https://github.com/TechC-SugarCane/train-YOLOv10.git/info/lfs.loc
 その際は、[`runs/detect/README.md`](./runs/detect/README.md)を参考に作成してください。
 
 ```bash
-# sugarcane
+# サトウキビをファインチューニングするコマンド
 yolo detect train cfg='cfg/sugarcane.yaml' data=yolov10-datasets/sugarcane/data.yaml model=weights/yolov10x.pt name='yolov10x-sugarcane' epochs=300 batch=16 imgsz=640 device=0
 
-# pineapple
+# パイナップルをファインチューニングするコマンド
 yolo detect train cfg='cfg/pineapple.yaml' data=yolov10-datasets/pineapple/data.yaml model=weights/yolov10x.pt name='yolov10x-pineapple' epochs=300 batch=16 imgsz=640 device=0
 ```
 
 ※ 上記を実行すると`yolov8n.pt`がダウンロードされますが、AMPというものの確認用に追加されているだけらしいので気にしなくて大丈夫です。
 詳しくは[#106](https://github.com/THU-MIG/yolov10/issues/106)を参照してください。
 
-ハイパーパラメーターは自由に調整してください。`cfg/`にあります。このファイルの`Hyperparameters`の部分でハイパラ関連の設定ができます。
+ハイパーパラメーターは自由に調整してください。下記ファイルが`cfg/`にあります。このファイルの`Hyperparameters`の部分でハイパラ関連の設定ができます。
 
 - サトウキビ: `sugarcane.yaml`
 - パイナップル: `pineapple.yaml`
