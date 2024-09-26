@@ -1,7 +1,7 @@
 # [YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458)
 
 
-Official PyTorch implementation of **YOLOv10**.
+Official PyTorch implementation of **YOLOv10**. NeurIPS 2024.
 
 <p align="center">
   <img src="figures/latency.svg" width=48%>
