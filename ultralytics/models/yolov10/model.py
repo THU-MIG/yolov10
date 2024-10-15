@@ -3,6 +3,8 @@ from ultralytics.nn.tasks import YOLOv10DetectionModel
 from .val import YOLOv10DetectionValidator
 from .predict import YOLOv10DetectionPredictor
 from .train import YOLOv10DetectionTrainer
+from .pgt_train import YOLOv10PGTDetectionTrainer
+# from .pgt_trainer import YOLOv10DetectionTrainer
 
 from huggingface_hub import PyTorchModelHubMixin
 from .card import card_template_text
@@ -30,6 +32,7 @@ class YOLOv10(Model, PyTorchModelHubMixin, model_card_template=card_template_tex
             "detect": {
                 "model": YOLOv10DetectionModel,
                 "trainer": YOLOv10DetectionTrainer,
+                "pgt_trainer": YOLOv10PGTDetectionTrainer,
                 "validator": YOLOv10DetectionValidator,
                 "predictor": YOLOv10DetectionPredictor,
             },

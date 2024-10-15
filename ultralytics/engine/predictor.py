@@ -206,7 +206,7 @@ class BasePredictor:
         self.vid_writer = {}
 
     @smart_inference_mode()
-    def stream_inference(self, source=None, model=None, *args, **kwargs):
+    def stream_inference(self, source=None, model=None, return_images = False, *args, **kwargs):
         """Streams real-time inference on camera feed and saves results to file."""
         if self.args.verbose:
             LOGGER.info("")
@@ -243,6 +243,9 @@ class BasePredictor:
                 with profilers[0]:
                     im = self.preprocess(im0s)
 
+                if return_images:
+                    im = im.requires_grad_(True)
+
                 # Inference
                 with profilers[1]:
                     preds = self.inference(im, *args, **kwargs)
@@ -272,7 +275,7 @@ class BasePredictor:
                     LOGGER.info("\n".join(s))
 
                 self.run_callbacks("on_predict_batch_end")
-                yield from self.results
+                yield from (self.results, im)
 
         # Release assets
         for v in self.vid_writer.values():

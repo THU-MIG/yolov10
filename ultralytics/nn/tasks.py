@@ -93,7 +93,7 @@ class BaseModel(nn.Module):
             return self.loss(x, *args, **kwargs)
         return self.predict(x, *args, **kwargs)
 
-    def predict(self, x, profile=False, visualize=False, augment=False, embed=None):
+    def predict(self, x, profile=False, visualize=False, augment=False, embed=None, return_images=False):
         """
         Perform a forward pass through the network.
 
@@ -107,9 +107,12 @@ class BaseModel(nn.Module):
         Returns:
             (torch.Tensor): The last output of the model.
         """
+        if return_images:
+            x = x.requires_grad_(True)
         if augment:
             return self._predict_augment(x)
-        return self._predict_once(x, profile, visualize, embed)
+        out = self._predict_once(x, profile, visualize, embed)
+        return (out, x) if return_images else out
 
     def _predict_once(self, x, profile=False, visualize=False, embed=None):
         """
@@ -140,13 +143,13 @@ class BaseModel(nn.Module):
                     return torch.unbind(torch.cat(embeddings, 1), dim=0)
         return x
 
-    def _predict_augment(self, x):
+    def _predict_augment(self, x, *args, **kwargs):
         """Perform augmentations on input image x and return augmented inference."""
         LOGGER.warning(
             f"WARNING ⚠️ {self.__class__.__name__} does not support augmented inference yet. "
             f"Reverting to single-scale inference instead."
         )
-        return self._predict_once(x)
+        return self._predict_once(x, *args, **kwargs)
 
     def _profile_one_layer(self, m, x, dt):
         """
@@ -260,7 +263,7 @@ class BaseModel(nn.Module):
         if verbose:
             LOGGER.info(f"Transferred {len(csd)}/{len(self.model.state_dict())} items from pretrained weights")
 
-    def loss(self, batch, preds=None):
+    def loss(self, batch, preds=None, return_images=False):
         """
         Compute loss.
 
@@ -271,8 +274,12 @@ class BaseModel(nn.Module):
         if not hasattr(self, "criterion"):
             self.criterion = self.init_criterion()
 
-        preds = self.forward(batch["img"]) if preds is None else preds
-        return self.criterion(preds, batch)
+        preds = self.forward(batch["img"], return_images=return_images) if preds is None else preds
+        if return_images:
+            preds, im = preds
+        loss = self.criterion(preds, batch)
+        out = loss if not return_images else (loss, im)
+        return out
 
     def init_criterion(self):
         """Initialize the loss criterion for the BaseModel."""
