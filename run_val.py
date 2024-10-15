@@ -1,51 +1,27 @@
-from ultralytics import YOLOv10
-import torch
-from PIL import Image
-from torchvision import transforms
+from ultralytics import YOLOv10, YOLO
+# from ultralytics.engine.pgt_trainer import PGTTrainer
+# from ultralytics import BaseTrainer
+# from ultralytics.engine.trainer import BaseTrainer
+import os
 
-# Define the device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Set CUDA device (only needed for multi-gpu machines) 
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "4" 
 
+# model = YOLOv10()
+# model = YOLO()
+# If you want to finetune the model with pretrained weights, you could load the 
+# pretrained weights like below
 # model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
-# model = YOLOv10.from_pretrained('jameslahm/yolov10n')
 # or
 # wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
-# wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10n.pt
-# model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
-model = YOLOv10('yolov10n.pt').to(device)
+model = YOLOv10('yolov10n.pt')
 
-# Load the image
-# path = '/home/nielseni6/PythonScripts/Github/yolov10/images/fat-dog.jpg'
-path = '/home/nielseni6/PythonScripts/Github/yolov10/images/The-Cardinal-Bird.jpg'
-image = Image.open(path)
+# Evaluate the model on the validation set
+results = model.val(data='coco.yaml')
 
-# Define the transformation to resize the image, convert it to a tensor, and normalize it
-transform = transforms.Compose([
-    transforms.Resize((640, 640)),
-    transforms.ToTensor(),
-    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-
-# Apply the transformation
-image_tensor = transform(image)
-
-# Add a batch dimension
-image_tensor = image_tensor.unsqueeze(0).to(device)
-image_tensor = image_tensor.requires_grad_(True)
-
-
-# Predict for a specific image
-# results = model.predict(image_tensor, save=True)
-# model.requires_grad_(True)
-
-
-# for p in model.parameters():
-#     p.requires_grad = True
-results = model.predict(image_tensor, save=True)
-
-# Display the results
-for result in results:
-    print(result)
+# Print the evaluation results
+print(results)
 
 # pred = results[0].boxes[0].conf
 
