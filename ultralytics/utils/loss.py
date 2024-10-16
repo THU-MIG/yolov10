@@ -9,7 +9,7 @@ from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh
 from ultralytics.utils.tal import RotatedTaskAlignedAssigner, TaskAlignedAssigner, dist2bbox, dist2rbox, make_anchors
 from .metrics import bbox_iou, probiou
 from .tal import bbox2dist
-
+from ultralytics.utils.plaus_functs import get_dist_reg, plaus_loss_fn
 
 class VarifocalLoss(nn.Module):
     """
@@ -725,3 +725,30 @@ class v10DetectLoss:
         one2one = preds["one2one"]
         loss_one2one = self.one2one(one2one, batch)
         return loss_one2many[0] + loss_one2one[0], torch.cat((loss_one2many[1], loss_one2one[1]))
+
+class v10PGTDetectLoss:
+    def __init__(self, model):
+        self.one2many = v8DetectionLoss(model, tal_topk=10)
+        self.one2one = v8DetectionLoss(model, tal_topk=1)
+    
+    def __call__(self, preds, batch):
+        batch['img'] = batch['img'].requires_grad_(True)
+        one2many = preds["one2many"]
+        loss_one2many = self.one2many(one2many, batch)
+        one2one = preds["one2one"]
+        loss_one2one = self.one2one(one2one, batch)
+
+        loss = loss_one2many[0] + loss_one2one[0]
+        
+        smask = get_dist_reg(batch['img'], batch['masks'])
+
+        grad = torch.autograd.grad(loss, batch['img'], retain_graph=True)[0]
+        grad = torch.abs(grad)
+
+        pgt_coeff = 3.0
+        plaus_loss = plaus_loss_fn(grad, smask, pgt_coeff)
+        # self.loss_items = torch.cat((self.loss_items, plaus_loss.unsqueeze(0)))
+        loss += plaus_loss
+        
+        return loss, torch.cat((loss_one2many[1], loss_one2one[1], plaus_loss.unsqueeze(0)))
+    

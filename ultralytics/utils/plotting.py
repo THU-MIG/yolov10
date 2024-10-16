@@ -717,7 +717,7 @@ def plot_images(
 ):
     """Plot image grid with labels."""
     if isinstance(images, torch.Tensor):
-        images = images.cpu().float().numpy()
+        images = images.detach().cpu().float().numpy()
     if isinstance(cls, torch.Tensor):
         cls = cls.cpu().numpy()
     if isinstance(bboxes, torch.Tensor):

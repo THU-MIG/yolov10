@@ -52,7 +52,9 @@ from ultralytics.utils.torch_utils import (
     strip_optimizer,
 )
 
-
+from ultralytics.utils.loss import v8DetectionLoss
+from ultralytics.utils.plaus_functs import get_dist_reg, plaus_loss_fn
+import matplotlib.path as matplotlib_path
 class PGTTrainer:
     """
     BaseTrainer.
@@ -159,6 +161,7 @@ class PGTTrainer:
         self.loss_names = ["Loss"]
         self.csv = self.save_dir / "results.csv"
         self.plot_idx = [0, 1, 2]
+        self.num = int(time.time())
 
         # Callbacks
         self.callbacks = _callbacks or callbacks.get_default_callbacks()
@@ -328,7 +331,7 @@ class PGTTrainer:
         if world_size > 1:
             self._setup_ddp(world_size)
         self._setup_train(world_size)
-
+        
         nb = len(self.train_loader)  # number of batches
         nw = max(round(self.args.warmup_epochs * nb), 100) if self.args.warmup_epochs > 0 else -1  # warmup iterations
         last_opt_step = -1
@@ -382,37 +385,88 @@ class PGTTrainer:
                 with torch.cuda.amp.autocast(self.amp):
                     batch = self.preprocess_batch(batch)
                     (self.loss, self.loss_items), images = self.model(batch, return_images=True)
+
+                # smask = get_dist_reg(images, batch['masks'])
+
+                # grad = torch.autograd.grad(self.loss, images, retain_graph=True)[0]
+                # grad = torch.abs(grad)
+
+                # self.args.pgt_coeff = 1.1
+                # plaus_loss = plaus_loss_fn(grad, smask, self.args.pgt_coeff)
+                # self.loss_items = torch.cat((self.loss_items, plaus_loss.unsqueeze(0)))
+                # self.loss += plaus_loss
+
+                debug_ = debug
+                if debug_ and (i % 25 == 0):
+                    debug_ = False
+                    # Create a tensor of zeros with the same size as images
+                    mask = torch.zeros_like(images, dtype=torch.float32)
+                    smask = get_dist_reg(images, batch['masks'])
+                    grad = torch.autograd.grad(self.loss, images, retain_graph=True)[0]
+                    grad = torch.abs(grad)
+
+                    batch_size = images.shape[0]
+                    imgsz = torch.tensor(batch['resized_shape'][0]).to(self.device)
+                    targets = torch.cat((batch["batch_idx"].view(-1, 1), batch["cls"].view(-1, 1), batch["bboxes"]), 1)
+                    targets = v8DetectionLoss.preprocess(self, targets=targets.to(self.device), batch_size=batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
+                    gt_labels, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy
+                    mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0)
                     
-                    if debug and (i % 250):
-                        grad = torch.autograd.grad(self.loss, images, create_graph=True)[0]
+                    # Iterate over each bounding box and set the corresponding pixels to 1
+                    for irx, bboxes in enumerate(gt_bboxes):
+                        for idx in range(len(bboxes)):
+                            x1, y1, x2, y2 = bboxes[idx]
+                            x1, y1, x2, y2 = int(torch.round(x1)), int(torch.round(y1)), int(torch.round(x2)), int(torch.round(y2))
+                            mask[irx, :, y1:y2, x1:x2] = 1.0
+
+                    save_imgs = True
+                    if save_imgs:
                         # Convert tensors to numpy arrays
                         images_np = images.detach().cpu().numpy().transpose(0, 2, 3, 1)
                         grad_np = grad.detach().cpu().numpy().transpose(0, 2, 3, 1)
+                        mask_np = mask.detach().cpu().numpy().transpose(0, 2, 3, 1)
+                        seg_mask_np = smask.detach().cpu().numpy().transpose(0, 2, 3, 1)
 
                         # Normalize grad for visualization
                         grad_np = (grad_np - grad_np.min()) / (grad_np.max() - grad_np.min())
-
+                        
                         for ix in range(images_np.shape[0]):
-                            fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-                            ax[0].imshow(images_np[i])
+                            fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+                            ax[0].imshow(images_np[ix])
                             ax[0].set_title('Image')
-                            ax[1].imshow(grad_np[i], cmap='jet')
+                            ax[1].imshow(grad_np[ix], cmap='jet')
                             ax[1].set_title('Gradient')
-                            ax[2].imshow(images_np[i])
-                            ax[2].imshow(grad_np[i], cmap='jet', alpha=0.5)
+                            ax[2].imshow(images_np[ix])
+                            ax[2].imshow(grad_np[ix], cmap='jet', alpha=0.5)
                             ax[2].set_title('Overlay')
+                            ax[3].imshow(mask_np[ix], cmap='gray')
+                            ax[3].set_title('Mask')
+                            ax[4].imshow(seg_mask_np[ix], cmap='gray')
+                            ax[4].set_title('Segmentation Mask')
+                            
+                            # Plot image with bounding boxes
+                            ax[5].imshow(images_np[ix])
+                            for bbox, cls in zip(gt_bboxes[ix], gt_labels[ix]):
+                                x1, y1, x2, y2 = bbox
+                                x1, y1, x2, y2 = int(torch.round(x1)), int(torch.round(y1)), int(torch.round(x2)), int(torch.round(y2))
+                                rect = plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, edgecolor=np.random.rand(3,), linewidth=2)
+                                ax[5].add_patch(rect)
+                                ax[5].text(x1, y1, f'{int(cls)}', color='white', fontsize=12, bbox=dict(facecolor='black', alpha=0.5))
+                            ax[5].set_title('Bounding Boxes')
 
-                            save_dir_attr = "figures/attributions"
+                            save_dir_attr = f"figures/attributions/run{self.num}"
                             if not os.path.exists(save_dir_attr):
                                 os.makedirs(save_dir_attr)
                             plt.savefig(f'{save_dir_attr}/debug_epoch_{epoch}_batch_{i}_image_{ix}.png')
                             plt.close(fig)
-                    
-                    if RANK != -1:
-                        self.loss *= world_size
-                    self.tloss = (
-                        (self.tloss * i + self.loss_items) / (i + 1) if self.tloss is not None else self.loss_items
-                    )
+                    images = images.detach()
+                
+                
+                if RANK != -1:
+                    self.loss *= world_size
+                self.tloss = (
+                    (self.tloss * i + self.loss_items) / (i + 1) if self.tloss is not None else self.loss_items
+                )
 
                 # Backward
                 self.scaler.scale(self.loss).backward()

@@ -1,5 +1,5 @@
 from ultralytics.engine.model import Model
-from ultralytics.nn.tasks import YOLOv10DetectionModel
+from ultralytics.nn.tasks import YOLOv10DetectionModel, YOLOv10PGTDetectionModel
 from .val import YOLOv10DetectionValidator
 from .predict import YOLOv10DetectionPredictor
 from .train import YOLOv10DetectionTrainer

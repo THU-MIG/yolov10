@@ -656,7 +656,10 @@ class Model(nn.Module):
                     pass
 
         self.trainer.hub_session = self.session  # attach optional HUB session
-        self.trainer.train(debug=debug)
+        if debug:
+            self.trainer.train(debug=debug)
+        else:
+            self.trainer.train()
         # Update model and cfg after training
         if RANK in (-1, 0):
             ckpt = self.trainer.best if self.trainer.best.exists() else self.trainer.last
