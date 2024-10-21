@@ -14,7 +14,7 @@ def main(args):
     # model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
     # or
     # wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
-    model = YOLOv10('yolov10n.pt', task='segment')
+    # model = YOLOv10('yolov10n.pt', task='segment')
 
     args = dict(model='yolov10n.pt', data=args.data_yaml, 
                 epochs=args.epochs, batch=args.batch_size,
@@ -35,10 +35,10 @@ def main(args):
     current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
     data_yaml_base = os.path.splitext(os.path.basename(args.data_yaml))[0]
     model_save_path = os.path.join(model_weights_dir, f'yolov10_{data_yaml_base}_trained_{current_time}.pt')
-    model.save(model_save_path)  
+    trainer.save(model_save_path)  
 
     # Evaluate the model on the validation set
-    results = model.val(data='coco.yaml')
+    results = trainer.val(data=args.data_yaml)
 
     # Print the evaluation results
     print(results)
