@@ -380,11 +380,13 @@ class PGTTrainer:
                         )
                         if "momentum" in x:
                             x["momentum"] = np.interp(ni, xi, [self.args.warmup_momentum, self.args.momentum])
-
+                
                 # Forward
                 with torch.cuda.amp.autocast(self.amp):
                     batch = self.preprocess_batch(batch)
-                    (self.loss, self.loss_items), images = self.model(batch, return_images=True)
+                    batch['img'] = batch['img'].requires_grad_(True)
+                    self.loss, self.loss_items = self.model(batch)
+                    # (self.loss, self.loss_items), images = self.model(batch, return_images=True)
 
                 # smask = get_dist_reg(images, batch['masks'])
 
@@ -418,7 +420,7 @@ class PGTTrainer:
                             x1, y1, x2, y2 = bboxes[idx]
                             x1, y1, x2, y2 = int(torch.round(x1)), int(torch.round(y1)), int(torch.round(x2)), int(torch.round(y2))
                             mask[irx, :, y1:y2, x1:x2] = 1.0
-
+                    
                     save_imgs = True
                     if save_imgs:
                         # Convert tensors to numpy arrays
@@ -498,7 +500,7 @@ class PGTTrainer:
                     self.run_callbacks("on_batch_end")
                     if self.args.plots and ni in self.plot_idx:
                         self.plot_training_samples(batch, ni)
-
+                
                 self.run_callbacks("on_train_batch_end")
 
             self.lr = {f"lr/pg{ir}": x["lr"] for ir, x in enumerate(self.optimizer.param_groups)}  # for loggers

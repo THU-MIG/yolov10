@@ -175,12 +175,14 @@ class PGTValidator:
 
             # Inference
             with dt[1]:
+                model.zero_grad()
                 preds = model(batch["img"].requires_grad_(True), augment=augment)
 
             # Loss
             with dt[2]:
                 if self.training:
                     self.loss += model.loss(batch, preds)[1]
+                    model.zero_grad()
 
             # Postprocess
             with dt[3]:

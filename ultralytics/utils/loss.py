@@ -731,7 +731,7 @@ class v10PGTDetectLoss:
         self.one2many = v8DetectionLoss(model, tal_topk=10)
         self.one2one = v8DetectionLoss(model, tal_topk=1)
     
-    def __call__(self, preds, batch):
+    def __call__(self, preds, batch, return_plaus=True):
         batch['img'] = batch['img'].requires_grad_(True)
         one2many = preds["one2many"]
         loss_one2many = self.one2many(one2many, batch)
@@ -739,16 +739,18 @@ class v10PGTDetectLoss:
         loss_one2one = self.one2one(one2one, batch)
 
         loss = loss_one2many[0] + loss_one2one[0]
-        
-        smask = get_dist_reg(batch['img'], batch['masks'])
+        if return_plaus:
+            smask = get_dist_reg(batch['img'], batch['masks'])
 
-        grad = torch.autograd.grad(loss, batch['img'], retain_graph=True)[0]
-        grad = torch.abs(grad)
+            grad = torch.autograd.grad(loss, batch['img'], retain_graph=True)[0]
+            grad = torch.abs(grad)
 
-        pgt_coeff = 3.0
-        plaus_loss = plaus_loss_fn(grad, smask, pgt_coeff)
-        # self.loss_items = torch.cat((self.loss_items, plaus_loss.unsqueeze(0)))
-        loss += plaus_loss
-        
-        return loss, torch.cat((loss_one2many[1], loss_one2one[1], plaus_loss.unsqueeze(0)))
+            pgt_coeff = 3.0
+            plaus_loss = plaus_loss_fn(grad, smask, pgt_coeff)
+            # self.loss_items = torch.cat((self.loss_items, plaus_loss.unsqueeze(0)))
+            loss += plaus_loss
+            
+            return loss, torch.cat((loss_one2many[1], loss_one2one[1], plaus_loss.unsqueeze(0)))
+        else:
+            return loss, torch.cat((loss_one2many[1], loss_one2one[1]))
     
