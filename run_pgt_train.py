@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str, default='0', help='CUDA device number')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs for training')
-    parser.add_argument('--data_yaml', type=str, required=True, default='coco.yaml', help='Path to the data YAML file')
+    parser.add_argument('--data_yaml', type=str, default='coco.yaml', help='Path to the data YAML file')
     args = parser.parse_args()
 
     # Set CUDA device (only needed for multi-gpu machines)
