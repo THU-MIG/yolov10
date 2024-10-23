@@ -16,6 +16,7 @@ def main(args):
     # or
     # wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
     # model = YOLOv10('yolov10n.pt', task='segment')
+    # model = YOLOv10('yolov10n.pt', task='segment')
 
     args_dict = dict(
                 model='yolov10n.pt', 
