@@ -654,7 +654,7 @@ class YOLOv10DetectionModel(DetectionModel):
     
 class YOLOv10PGTDetectionModel(DetectionModel):
     def init_criterion(self):
-        return v10PGTDetectLoss(self)
+        return v10PGTDetectLoss(self, pgt_coeff=self.args.pgt_coeff if hasattr(self.args, 'pgt_coeff') else None)
 
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""

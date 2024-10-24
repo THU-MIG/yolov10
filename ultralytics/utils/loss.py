@@ -727,12 +727,14 @@ class v10DetectLoss:
         return loss_one2many[0] + loss_one2one[0], torch.cat((loss_one2many[1], loss_one2one[1]))
 
 class v10PGTDetectLoss:
-    def __init__(self, model, pgt_coeff=3.0):
+    def __init__(self, model, pgt_coeff):
         self.one2many = v8DetectionLoss(model, tal_topk=10)
         self.one2one = v8DetectionLoss(model, tal_topk=1)
-        self.pgt_coeff = pgt_coeff
+        self.pgt_coeff = pgt_coeff if pgt_coeff is not None else 2.0
     
-    def __call__(self, preds, batch, return_plaus=True, inference=False):
+    def __call__(self, preds, batch, return_plaus=True, pgt_coeff=None):
+        if pgt_coeff is not None:
+            self.pgt_coeff = pgt_coeff
         batch['img'] = batch['img'].requires_grad_(True)
         one2many = preds["one2many"]
         loss_one2many = self.one2many(one2many, batch)
@@ -743,11 +745,6 @@ class v10PGTDetectLoss:
         if return_plaus:
             smask = get_dist_reg(batch['img'], batch['masks'])#.requires_grad_(True)
 
-            # graph = False if inference else True
-            # grad = torch.autograd.grad(loss, batch['img'], 
-            #                            retain_graph=True, 
-            #                            create_graph=graph,
-            #                            )[0]
             try:
                 grad = torch.autograd.grad(loss, batch['img'], 
                                            retain_graph=True, 
@@ -764,6 +761,7 @@ class v10PGTDetectLoss:
 
             plaus_loss = plaus_loss_fn(grad, smask, self.pgt_coeff)
             # self.loss_items = torch.cat((self.loss_items, plaus_loss.unsqueeze(0)))
+            
             loss += plaus_loss
             
             return loss, torch.cat((loss_one2many[1], loss_one2one[1], plaus_loss.unsqueeze(0)))

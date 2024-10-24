@@ -39,8 +39,11 @@ def get_dist_reg(images, seg_mask):
             kernel_size += 1
         seg_mask1 = T.GaussianBlur(kernel_size=(kernel_size, kernel_size), sigma=sigma)(seg_mask)
         if torch.max(seg_mask1) > 1.0:
-            seg_mask1 = (seg_mask1 - seg_mask1.min()) / (seg_mask1.max() - seg_mask1.min())
+            # seg_mask1 = (seg_mask1 - seg_mask1.min()) / (seg_mask1.max() - seg_mask1.min())
+            seg_mask1 = normalize_tensor(seg_mask1)
         smask = torch.max(smask, seg_mask1)
+        
+    smask = normalize_tensor(smask)
     return smask
 
 def get_gradient(img, grad_wrt, norm=False, absolute=True, grayscale=False, keepmean=False):
@@ -371,6 +374,29 @@ def normalize_batch(x):
         mins[i] = x[i].min()
         maxs[i] = x[i].max()
     x_ = (x - mins) / (maxs - mins)
+    
+    return x_
+
+def normalize_batch_nonan(x):
+    """
+    Normalize a batch of tensors along each channel.
+    
+    Args:
+        x (torch.Tensor): Input tensor of shape (batch_size, channels, height, width).
+        
+    Returns:
+        torch.Tensor: Normalized tensor of the same shape as the input.
+    """
+    mins = torch.zeros((x.shape[0], *(1,)*len(x.shape[1:])), device=x.device)
+    maxs = torch.zeros((x.shape[0], *(1,)*len(x.shape[1:])), device=x.device)
+    x_ = torch.zeros_like(x)
+    for i in range(x.shape[0]):
+        if torch.all(x[i] == 0):
+            x_[i] = x[i]
+        else:
+            mins[i] = x[i].min()
+            maxs[i] = x[i].max()
+            x_[i] = (x[i] - mins[i]) / (maxs[i] - mins[i])
     
     return x_
 

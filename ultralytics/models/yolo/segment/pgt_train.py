@@ -5,9 +5,18 @@ from copy import copy
 from ultralytics.models import yolo
 from ultralytics.nn.tasks import SegmentationModel, DetectionModel
 from ultralytics.utils import DEFAULT_CFG, RANK
+# from ultralytics.utils import yaml_load, IterableSimpleNamespace, ROOT
 from ultralytics.utils.plotting import plot_images, plot_results
-from ultralytics.models.yolov10.model import YOLOv10DetectionModel, YOLOv10PGTDetectionModel
-from ultralytics.models.yolov10.val import YOLOv10DetectionValidator, YOLOv10PGTDetectionValidator
+from ultralytics.models.yolov10.model import YOLOv10PGTDetectionModel
+from ultralytics.models.yolov10.val import YOLOv10PGTDetectionValidator
+
+# # Default configuration
+# DEFAULT_CFG_DICT = yaml_load(ROOT / "cfg/pgt_train.yaml")
+# for k, v in DEFAULT_CFG_DICT.items():
+#     if isinstance(v, str) and v.lower() == "none":
+#         DEFAULT_CFG_DICT[k] = None
+# DEFAULT_CFG_KEYS = DEFAULT_CFG_DICT.keys()
+# DEFAULT_CFG = IterableSimpleNamespace(**DEFAULT_CFG_DICT)
 
 class PGTSegmentationTrainer(yolo.detect.PGTDetectionTrainer):
     """

@@ -668,9 +668,10 @@ class Model(nn.Module):
             self.metrics = getattr(self.trainer.validator, "metrics", None)  # TODO: no metrics returned by DDP
         return self.metrics
 
-    def train_pgt(
+    def train_pgt( # Currently unused, but should be considered if changes to the train function are made
         self,
         trainer=None,
+        debug=False,
         **kwargs,
     ):
         """
@@ -733,7 +734,10 @@ class Model(nn.Module):
                     pass
 
         self.trainer.hub_session = self.session  # attach optional HUB session
-        self.trainer.train()
+        if debug:
+            self.trainer.train(debug=debug)
+        else:
+            self.trainer.train()
         # Update model and cfg after training
         if RANK in (-1, 0):
             ckpt = self.trainer.best if self.trainer.best.exists() else self.trainer.last
