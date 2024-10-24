@@ -41,10 +41,8 @@ class PGTSegmentationTrainer(yolo.detect.PGTDetectionTrainer):
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Return SegmentationModel initialized with specified config and weights."""
-        if self.args.model in ['yolov10n.pt', 'yolov10m.pt', 'yolov10x.pt', 'yolov10s.pt', 'yolov10b.pt', 'yolov10l.pt']:
-            model = YOLOv10PGTDetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
-        else:
-            model = SegmentationModel(cfg, ch=3, nc=self.data["nc"], verbose=verbose and RANK == -1)
+
+        model = YOLOv10PGTDetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
         if weights:
             model.load(weights)
 
@@ -52,17 +50,11 @@ class PGTSegmentationTrainer(yolo.detect.PGTDetectionTrainer):
 
     def get_validator(self):
         """Return an instance of SegmentationValidator for validation of YOLO model."""
-        
-        if self.args.model in ['yolov10n.pt', 'yolov10m.pt', 'yolov10x.pt', 'yolov10s.pt', 'yolov10b.pt', 'yolov10l.pt']:
-            self.loss_names = "box_om", "cls_om", "dfl_om", "box_oo", "cls_oo", "dfl_oo", "pgt_loss",
-            return YOLOv10PGTDetectionValidator(
-                self.test_loader, save_dir=self.save_dir, args=copy(self.args), _callbacks=self.callbacks
-            )
-        else:
-            self.loss_names = "box_loss", "seg_loss", "cls_loss", "dfl_loss"
-            return yolo.segment.SegmentationValidator(
-                self.test_loader, save_dir=self.save_dir, args=copy(self.args), _callbacks=self.callbacks
-            )
+
+        self.loss_names = "box_om", "cls_om", "dfl_om", "box_oo", "cls_oo", "dfl_oo", "pgt_loss",
+        return YOLOv10PGTDetectionValidator(
+            self.test_loader, save_dir=self.save_dir, args=copy(self.args), _callbacks=self.callbacks
+        )
 
     def plot_training_samples(self, batch, ni):
         """Creates a plot of training sample images with labels and box coordinates."""
