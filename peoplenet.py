@@ -86,112 +86,181 @@ def postprocess(
         bbox: np.ndarray,
         original_dims: Tuple[int, int],
         confidence_thresholds: Dict[str, float] = {
-            'Person': 0.3,  # Lower threshold to catch more people
+            'Person': 0.15,  # Even lower threshold for person detection
             'Face': 0.5,
-            'Bag': 0.8  # Higher threshold to reduce false positives
+            'Bag': 0.8
         },
-        min_distance: Dict[str, int] = {
-            'Person': 100,  # Larger distance for person detection
-            'Face': 30,
-            'Bag': 50
-        },
-        min_size: Dict[str, int] = {
-            'Person': 20,  # Larger minimum size for person detection
-            'Face': 10,
-            'Bag': 15
-        },
-        box_scale_factor: Dict[str, float] = {
-            'Person': 1.3,  # Larger scaling for person boxes
-            'Face': 1.1,
-            'Bag': 1.0
-        }
+        scales: List[float] = [0.5, 1.0, 1.5, 2.0]  # Multi-scale detection
 ) -> List[Tuple[str, Tuple[float, float, float, float], float]]:
     """
-    Enhanced postprocessing with better person detection and overlap handling.
+    Multi-scale detection with enhanced region growing.
     """
-    classes = ['Person', 'Face', 'Bag']  # Reorder to prioritize person detection
+    classes = ['Person', 'Face', 'Bag']
     results = []
 
     orig_height, orig_width = original_dims[1], original_dims[0]
 
     for class_name in classes:
-        class_idx = ['Bag', 'Face', 'Person'].index(class_name)  # Map to original model output order
-
-        # Get class-specific parameters
+        class_idx = ['Bag', 'Face', 'Person'].index(class_name)
         threshold = confidence_thresholds[class_name]
-        distance = min_distance[class_name]
-        size = min_size[class_name]
-        scale = box_scale_factor[class_name]
 
-        # Extract heatmap for current class
+        # Extract heatmap
         heatmap = cov[0, class_idx]
 
-        # Resize heatmap to original image dimensions
-        heatmap = cv2.resize(heatmap, (orig_width, orig_height))
-
-        # Normalize heatmap
-        if heatmap.max() > heatmap.min():
-            heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min())
-
-        # For person class, apply additional processing
+        # Multi-scale processing for person class
         if class_name == 'Person':
-            # Enhance person detection sensitivity
-            heatmap = cv2.GaussianBlur(heatmap, (5, 5), 0)
-            heatmap = np.power(heatmap, 0.7)  # Reduce sensitivity to confidence threshold
+            # Process at multiple scales
+            scale_detections = []
+            for scale in scales:
+                # Resize heatmap to current scale
+                current_size = (
+                    int(orig_width * scale),
+                    int(orig_height * scale)
+                )
+                scaled_heatmap = cv2.resize(heatmap, current_size)
 
-        # Find local maxima
-        coordinates = peak_local_max(
-            heatmap,
-            min_distance=distance,
-            threshold_abs=threshold,
-            exclude_border=False
-        )
+                # Apply enhancements
+                scaled_heatmap = cv2.GaussianBlur(scaled_heatmap, (5, 5), 0)
+                scaled_heatmap = np.power(scaled_heatmap, 0.5)
 
-        # Process each peak
-        for coord in coordinates:
-            y, x = coord
+                # Find peaks at current scale
+                peaks = peak_local_max(
+                    scaled_heatmap,
+                    min_distance=int(25 * scale),
+                    threshold_abs=threshold,
+                    exclude_border=False
+                )
 
-            # Grow region around peak
-            binary = heatmap > (heatmap[y, x] * 0.3)  # More lenient region growing
-            labeled, _ = ndimage.label(binary)
-            region = labeled == labeled[y, x]
+                # Process each peak
+                for peak in peaks:
+                    y, x = peak
 
-            # Find region bounds
-            ys, xs = np.where(region)
-            if len(ys) > 0 and len(xs) > 0:
-                x1, x2 = np.min(xs), np.max(xs)
-                y1, y2 = np.min(ys), np.max(ys)
+                    # Region growing with dynamic thresholding
+                    peak_val = scaled_heatmap[y, x]
+                    grow_threshold = peak_val * 0.15  # More aggressive growing
+                    binary = scaled_heatmap > grow_threshold
 
-                # Scale the box
-                width = x2 - x1
-                height = y2 - y1
-                center_x = (x1 + x2) / 2
-                center_y = (y1 + y2) / 2
+                    # Connect nearby regions
+                    binary = cv2.dilate(binary.astype(np.uint8), None, iterations=2)
+                    binary = cv2.erode(binary, None, iterations=1)
 
-                # Apply class-specific scaling
-                width *= scale
-                height *= scale
+                    # Find connected components
+                    labeled, _ = ndimage.label(binary)
+                    region = labeled == labeled[y, x]
 
-                # Ensure box stays within image bounds
-                width = min(width, orig_width - center_x, center_x)
-                height = min(height, orig_height - center_y, center_y)
+                    # Get region bounds
+                    ys, xs = np.where(region)
+                    if len(ys) > 0 and len(xs) > 0:
+                        # Calculate box in scaled coordinates
+                        x1, x2 = np.min(xs), np.max(xs)
+                        y1, y2 = np.min(ys), np.max(ys)
 
-                # Filter small detections
-                if width >= size and height >= size:
-                    # Get confidence from peak value
-                    confidence = heatmap[y, x]
+                        # Convert back to original scale
+                        x1 = int(x1 / scale)
+                        y1 = int(y1 / scale)
+                        x2 = int(x2 / scale)
+                        y2 = int(y2 / scale)
 
-                    # Add detection
+                        # Calculate center and dimensions
+                        center_x = (x1 + x2) / 2
+                        center_y = (y1 + y2) / 2
+                        width = x2 - x1
+                        height = y2 - y1
+
+                        # Add detection if size is reasonable
+                        if width >= 20 and height >= 20:
+                            scale_detections.append((
+                                class_name,
+                                (center_x, center_y, width * 1.2, height * 1.2),
+                                peak_val
+                            ))
+
+            # Merge multi-scale detections
+            results.extend(merge_scale_detections(scale_detections))
+
+        else:
+            # Regular processing for non-person classes
+            heatmap = cv2.resize(heatmap, (orig_width, orig_height))
+
+            if heatmap.max() > heatmap.min():
+                heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min())
+
+            coordinates = peak_local_max(
+                heatmap,
+                min_distance=30,
+                threshold_abs=threshold,
+                exclude_border=False
+            )
+
+            for coord in coordinates:
+                y, x = coord
+                binary = heatmap > (heatmap[y, x] * 0.3)
+                labeled, _ = ndimage.label(binary)
+                region = labeled == labeled[y, x]
+
+                ys, xs = np.where(region)
+                if len(ys) > 0 and len(xs) > 0:
+                    x1, x2 = np.min(xs), np.max(xs)
+                    y1, y2 = np.min(ys), np.max(ys)
+
+                    center_x = (x1 + x2) / 2
+                    center_y = (y1 + y2) / 2
+                    width = (x2 - x1) * 1.1
+                    height = (y2 - y1) * 1.1
+
                     results.append((
                         class_name,
                         (center_x, center_y, width, height),
-                        confidence
+                        heatmap[y, x]
                     ))
 
-    # Resolve overlapping detections
-    results = resolve_overlapping_detections(results)
+    # Final overlap resolution
+    return resolve_overlapping_detections(results, iou_threshold=0.3)
 
-    return results
+
+def merge_scale_detections(
+        detections: List[Tuple[str, Tuple[float, float, float, float], float]],
+        iou_threshold: float = 0.5
+) -> List[Tuple[str, Tuple[float, float, float, float], float]]:
+    """
+    Merge detections from different scales.
+    """
+    if not detections:
+        return []
+
+    # Sort by confidence
+    detections = sorted(detections, key=lambda x: x[2], reverse=True)
+    merged = []
+
+    while detections:
+        current = detections.pop(0)
+        matches = [current]
+
+        i = 0
+        while i < len(detections):
+            if calculate_iou(current[1], detections[i][1]) > iou_threshold:
+                matches.append(detections.pop(i))
+            else:
+                i += 1
+
+        # Merge matched detections
+        if len(matches) > 1:
+            # Average the coordinates and dimensions
+            boxes = np.array([m[1] for m in matches])
+            confidence = max(m[2] for m in matches)
+
+            merged_box = (
+                np.mean(boxes[:, 0]),  # center_x
+                np.mean(boxes[:, 1]),  # center_y
+                np.mean(boxes[:, 2]),  # width
+                np.mean(boxes[:, 3])  # height
+            )
+
+            merged.append(('Person', merged_box, confidence))
+        else:
+            merged.append(matches[0])
+
+    return merged
 
 
 def resolve_overlapping_detections(
@@ -611,20 +680,131 @@ def process_image(image_path: str, triton_url: str, model_name: str) -> Tuple[np
     return result_image, inference_time
 
 
+def verify_preprocess(image: np.ndarray) -> Tuple[np.ndarray, Tuple[int, int]]:
+    """
+    Enhanced preprocessing with verification steps.
+
+    Args:
+        image (np.ndarray): Input image array in BGR format
+
+    Returns:
+        Tuple[np.ndarray, Tuple[int, int]]: Preprocessed image and original dimensions
+    """
+    # Store original dimensions
+    original_height, original_width = image.shape[:2]
+
+    # First, let's verify the input image
+    print(f"Original image shape: {image.shape}")
+    print(f"Original image value range: {image.min()} to {image.max()}")
+
+    # Convert BGR to RGB with verification
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    print(f"After RGB conversion: {image_rgb.shape}")
+
+    # Preserve aspect ratio while resizing to target height
+    target_height = 544
+    target_width = 960
+
+    # Calculate scaling factor to maintain aspect ratio
+    scale = min(target_width / original_width, target_height / original_height)
+    new_width = int(original_width * scale)
+    new_height = int(original_height * scale)
+
+    # Resize with aspect ratio preservation
+    resized = cv2.resize(image_rgb, (new_width, new_height))
+
+    # Create a black canvas of target size
+    canvas = np.zeros((target_height, target_width, 3), dtype=np.float32)
+
+    # Calculate padding
+    y_offset = (target_height - new_height) // 2
+    x_offset = (target_width - new_width) // 2
+
+    # Place the resized image on the canvas
+    canvas[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = resized
+
+    # Convert to float32 and normalize
+    preprocessed = canvas.astype(np.float32) / 255.0
+    print(f"After normalization range: {preprocessed.min()} to {preprocessed.max()}")
+
+    # Transpose from HWC to CHW format
+    preprocessed = preprocessed.transpose(2, 0, 1)
+    print(f"After transpose: {preprocessed.shape}")
+
+    # Add batch dimension
+    preprocessed = np.expand_dims(preprocessed, axis=0)
+    print(f"Final preprocessed shape: {preprocessed.shape}")
+
+    # Save visualization of preprocessed image for verification
+    vis_image = (preprocessed[0].transpose(1, 2, 0) * 255).astype(np.uint8)
+    cv2.imwrite("preprocessed_debug.jpg", cv2.cvtColor(vis_image, cv2.COLOR_RGB2BGR))
+
+    return preprocessed, (original_width, original_height)
+
+
+def run_inference_with_verification(
+        triton_client: httpclient.InferenceServerClient,
+        preprocessed_image: np.ndarray,
+        model_name: str
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]:
+    """
+    Run inference with additional verification steps.
+    """
+    print("\nRunning inference with verification...")
+
+    # Prepare input tensor
+    input_name = "input_1:0"
+    inputs = [httpclient.InferInput(input_name, list(preprocessed_image.shape), datatype="FP32")]
+    inputs[0].set_data_from_numpy(preprocessed_image)
+
+    # Prepare outputs
+    outputs = [
+        httpclient.InferRequestedOutput("output_cov/Sigmoid:0"),
+        httpclient.InferRequestedOutput("output_bbox/BiasAdd:0")
+    ]
+
+    # Run inference
+    response = triton_client.infer(model_name, inputs, outputs=outputs)
+
+    # Get and verify outputs
+    cov = response.as_numpy("output_cov/Sigmoid:0")
+    bbox = response.as_numpy("output_bbox/BiasAdd:0")
+
+    print(f"\nCoverage output shape: {cov.shape}")
+    print(f"Coverage value range: {cov.min():.4f} to {cov.max():.4f}")
+    print(f"Coverage mean value: {cov.mean():.4f}")
+
+    print(f"\nBBox output shape: {bbox.shape}")
+    print(f"BBox value range: {bbox.min():.4f} to {bbox.max():.4f}")
+    print(f"BBox mean value: {bbox.mean():.4f}")
+
+    # Save heatmap visualizations for each class
+    debug_info = {}
+    for i, class_name in enumerate(['Bag', 'Face', 'Person']):
+        heatmap = cov[0, i]
+        heatmap_vis = cv2.resize(heatmap, (960, 544))
+        heatmap_vis = (heatmap_vis * 255).astype(np.uint8)
+        heatmap_colored = cv2.applyColorMap(heatmap_vis, cv2.COLORMAP_JET)
+        cv2.imwrite(f"heatmap_{class_name.lower()}_debug.jpg", heatmap_colored)
+        debug_info[f'heatmap_{class_name.lower()}'] = heatmap
+
+    return cov, bbox, debug_info
+
 if __name__ == "__main__":
-    # Example configuration
+    image_path = "ultralytics/assets/83.jpg"
     triton_url = "192.168.0.22:8000"
     model_name = "peoplenet"
-    image_path = "ultralytics/assets/83.jpg"
 
-    try:
-        # Process image
-        result_image, inference_time = process_image(image_path, triton_url, model_name)
+    # Read image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError(f"Could not read image at {image_path}")
 
-        # Save result
-        cv2.imwrite("output_detection.jpg", result_image)
-        print(f"Inference time: {inference_time:.3f} seconds")
-        print("Detection results saved to output_detection.jpg")
+    # Preprocess with verification
+    preprocessed_image, original_dims = verify_preprocess(image)
 
-    except Exception as e:
-        print(f"Error processing image: {str(e)}")
+    # Initialize Triton client
+    client = TritonClient(triton_url, model_name)
+
+    # Run inference with verification
+    cov, bbox, debug_info = run_inference_with_verification(client, preprocessed_image, model_name)
