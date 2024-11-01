@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime
 import torch
 
-# nohup python run_pgt_train.py --device 0 > ./output_logs/gpu0_yolov10_pgt_train.log 2>&1 & 
+# nohup python run_pgt_train.py --device 7 > ./output_logs/gpu7_yolov10_pgt_train.log 2>&1 & 
 
 def main(args):
     model = YOLOv10PGT('yolov10n.pt')
@@ -15,7 +15,7 @@ def main(args):
                 epochs=args.epochs, 
                 batch=args.batch_size,
                 # amp=False,
-                # pgt_coeff=1.5,
+                pgt_coeff=3.0,
                 # cfg='pgt_train.yaml',  # Load and train model with the config file
                 )
     # If you want to finetune the model with pretrained weights, you could load the 
@@ -51,7 +51,6 @@ def main(args):
     model.save(model_save_path)
     # torch.save(trainer.model.state_dict(), model_save_path)
     
-
     # Evaluate the model on the validation set
     results = model.val(data=args.data_yaml)
 
@@ -61,7 +60,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train YOLOv10 model with PGT segmentation.')
     parser.add_argument('--device', type=str, default='0', help='CUDA device number')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs for training')
     parser.add_argument('--data_yaml', type=str, default='coco.yaml', help='Path to the data YAML file')
     args = parser.parse_args()

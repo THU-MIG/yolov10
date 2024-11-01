@@ -11,7 +11,7 @@ from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh, non_max_suppr
 from .metrics import bbox_iou
 import torchvision.transforms as T
 
-def plaus_loss_fn(grad, smask, pgt_coeff):
+def plaus_loss_fn(grad, smask, pgt_coeff, square=True):
     ################## Compute the PGT Loss ##################
     # Positive regularization term for incentivizing pixels near the target to have high attribution
     dist_attr_pos = attr_reg(grad, (1.0 - smask)) # dist_reg = seg_mask
@@ -22,7 +22,7 @@ def plaus_loss_fn(grad, smask, pgt_coeff):
     dist_reg = ((dist_attr_pos / torch.mean(grad)) - (dist_attr_neg / torch.mean(grad)))
     plaus_reg = (((1.0 + dist_reg) / 2.0))
     # Calculate plausibility loss
-    plaus_loss = (1 - plaus_reg) * pgt_coeff
+    plaus_loss = ((1 - plaus_reg) ** 2 if square else (1 - plaus_reg)) * pgt_coeff
     return plaus_loss
 
 def get_dist_reg(images, seg_mask):
