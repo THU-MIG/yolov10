@@ -5,7 +5,7 @@ onnxruntime==1.15.1
 pycocotools==2.0.7
 PyYAML==6.0.1
 scipy==1.13.0
-onnxsim==0.4.36
+onnxslim==0.1.31
 gradio==4.31.5
 opencv-python==4.9.0.80
 psutil==5.9.8
