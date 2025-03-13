@@ -1,3 +1,33 @@
+## Latest Updates -- [YOLOE: Real-Time Seeing Anything](https://github.com/THU-MIG/yoloe)
+
+Please check out our new release on [**YOLOE**](https://github.com/THU-MIG/yoloe).
+
+* YOLOE code: https://github.com/THU-MIG/yoloe
+* YOLOE paper: https://arxiv.org/abs/2503.07465
+
+ <p align="center">
+  <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/comparison.svg" width=70%> <br>
+  Comparison of performance, training cost, and inference efficiency between YOLOE (Ours) and YOLO-Worldv2 in terms of open text prompts.
+</p>
+
+**YOLOE(ye)** is a highly **efficient**, **unified**, and **open** object detection and segmentation model for real-time seeing anything, like human eye, under different prompt mechanisms, like *texts*, *visual inputs*, and *prompt-free paradigm*.
+
+<p align="center">
+  <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/visualization.svg" width=96%> <br>
+</p>
+
+<details>
+  <summary>
+  <font size="+1">Abstract</font>
+  </summary>
+Object detection and segmentation are widely employed in computer vision applications, yet conventional models like YOLO series, while efficient and accurate, are limited by predefined categories, hindering adaptability in open scenarios. Recent open-set methods leverage text prompts, visual cues, or prompt-free paradigm to overcome this, but often compromise between performance and efficiency due to high computational demands or deployment complexity. In this work, we introduce YOLOE, which integrates detection and segmentation across diverse open prompt mechanisms within a single highly efficient model, achieving real-time seeing anything. For text prompts, we propose Re-parameterizable Region-Text Alignment (RepRTA) strategy. It refines pretrained textual embeddings via a re-parameterizable lightweight auxiliary network and enhances visual-textual alignment with zero inference and transferring overhead. For visual prompts, we present Semantic-Activated Visual Prompt Encoder (SAVPE). It employs decoupled semantic and activation branches to bring improved visual embedding and accuracy with minimal complexity. For prompt-free scenario, we introduce Lazy Region-Prompt Contrast (LRPC) strategy. It utilizes a built-in large vocabulary and specialized embedding to identify all objects, avoiding costly language model dependency. Extensive experiments show YOLOE's exceptional zero-shot performance and transferability with high inference efficiency and low training cost. Notably, on LVIS, with $3\times$ less training cost and $1.4\times$ inference speedup, YOLOE-v8-S surpasses YOLO-Worldv2-S by 3.5 AP. When transferring to COCO, YOLOE-v8-L achieves 0.6 $AP^b$ and 0.4 $AP^m$ gains over closed-set YOLOv8-L with nearly $4\times$ less training time.
+</details>
+<p></p>
+<p align="center">
+  <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/pipeline.svg" width=96%> <br>
+</p>
+
+
 # [YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458)
 
 
