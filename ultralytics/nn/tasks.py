@@ -53,11 +53,12 @@ from ultralytics.nn.modules import (
     PSA,
     SCDown,
     RepVGGDW,
-    v10Detect
+    v10Detect,
+    v10Segment
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v10DetectLoss
+from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v10DetectLoss,v10SegmentationLoss
 from ultralytics.utils.plotting import feature_visualization
 from ultralytics.utils.torch_utils import (
     fuse_conv_and_bn,
@@ -303,7 +304,9 @@ class DetectionModel(BaseModel):
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
             if isinstance(m, v10Detect):
-                forward = lambda x: self.forward(x)["one2many"]
+                forward = lambda x: self.forward(x)["one2many"] if isinstance(m, (v10Segment)) else self.forward(x)["one2many"]
+                # forward = lambda x: self.forward(x)["one2many"]
+            
             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
@@ -645,6 +648,16 @@ class YOLOv10DetectionModel(DetectionModel):
     def init_criterion(self):
         return v10DetectLoss(self)
 
+
+class YOLOv10SegmentationModel(DetectionModel):
+    def __init__(self, cfg='yolov10n-seg.yaml', ch=3, nc=None, verbose=True):
+        """Initialize YOLOv8 segmentation model with given config and parameters."""
+        super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
+
+    def init_criterion(self):
+        return v10SegmentationLoss(self)
+        # return v10DetectLoss(self)
+
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
 
@@ -917,10 +930,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
-        elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}:
+        elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect,v10Segment}:
             args.append([ch[x] for x in f])
-            if m is Segment:
+            if m is Segment or m is v10Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
+
         elif m is RTDETRDecoder:  # special case, channels arg must be passed in index 1
             args.insert(1, [ch[x] for x in f])
         elif m is CBLinear:
@@ -1007,7 +1021,7 @@ def guess_model_task(model):
             return "classify"
         if m == "detect" or m == "v10detect":
             return "detect"
-        if m == "segment":
+        if m == "segment" or m == "v10segment":
             return "segment"
         if m == "pose":
             return "pose"

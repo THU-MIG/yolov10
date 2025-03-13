@@ -191,6 +191,7 @@ class v8DetectionLoss:
             pred_dist = pred_dist.view(b, a, 4, c // 4).softmax(3).matmul(self.proj.type(pred_dist.dtype))
             # pred_dist = pred_dist.view(b, a, c // 4, 4).transpose(2,3).softmax(3).matmul(self.proj.type(pred_dist.dtype))
             # pred_dist = (pred_dist.view(b, a, c // 4, 4).softmax(2) * self.proj.type(pred_dist.dtype).view(1, 1, -1, 1)).sum(2)
+        
         return dist2bbox(pred_dist, anchor_points, xywh=False)
 
     def __call__(self, preds, batch):
@@ -250,15 +251,21 @@ class v8DetectionLoss:
 class v8SegmentationLoss(v8DetectionLoss):
     """Criterion class for computing training losses."""
 
-    def __init__(self, model):  # model must be de-paralleled
+    def __init__(self, model,tal_topk=10):  # model must be de-paralleled
         """Initializes the v8SegmentationLoss class, taking a de-paralleled model as argument."""
-        super().__init__(model)
+        super().__init__(model,tal_topk)
         self.overlap = model.args.overlap_mask
 
     def __call__(self, preds, batch):
         """Calculate and return the loss for the YOLO model."""
+
         loss = torch.zeros(4, device=self.device)  # box, cls, dfl
         feats, pred_masks, proto = preds if len(preds) == 3 else preds[1]
+        feats = feats[1] if isinstance(feats, tuple) else feats
+
+        # [4, 65, 80, 80] [4, 65, 40, 40] [4, 65, 20, 20]
+        # [4, 32, 8400] [4, 32, 160, 160]
+
         batch_size, _, mask_h, mask_w = proto.shape  # batch size, number of masks, mask height, mask width
         pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
             (self.reg_max * 4, self.nc), 1
@@ -288,7 +295,6 @@ class v8SegmentationLoss(v8DetectionLoss):
                 "correctly formatted 'segment' dataset using 'data=coco8-seg.yaml' "
                 "as an example.\nSee https://docs.ultralytics.com/datasets/segment/ for help."
             ) from e
-
         # Pboxes
         pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
 
@@ -725,3 +731,26 @@ class v10DetectLoss:
         one2one = preds["one2one"]
         loss_one2one = self.one2one(one2one, batch)
         return loss_one2many[0] + loss_one2one[0], torch.cat((loss_one2many[1], loss_one2one[1]))
+
+
+
+
+class v10SegmentationLoss:
+    """Criterion class for computing training losses."""
+
+    def __init__(self, model):  # model must be de-paralleled
+        """Initializes the v8SegmentationLoss class, taking a de-paralleled model as argument."""
+        self.overlap = model.args.overlap_mask
+        self.one2many = v8SegmentationLoss(model, tal_topk=10)
+        self.one2one = v8SegmentationLoss(model, tal_topk=1)
+        
+    def __call__(self, preds, batch):
+        """Calculate and return the loss for the YOLO model."""   
+        one2many = [preds["one2many"],preds["coef"],preds["proto"]]
+        loss_one2many = self.one2many(one2many, batch)
+        one2one = [preds["one2one"],preds["coef"],preds["proto"]]
+        loss_one2one = self.one2one(one2one, batch)
+        return loss_one2many[0] + loss_one2one[0], torch.cat((loss_one2many[1], loss_one2one[1]))
+
+
+    

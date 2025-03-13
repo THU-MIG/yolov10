@@ -267,7 +267,7 @@ class BaseDataset(Dataset):
 
     def __len__(self):
         """Returns the length of the labels list for the dataset."""
-        return len(self.labels)
+        return int(0.1*len(self.labels))
 
     def update_labels_info(self, label):
         """Custom your label format here."""
