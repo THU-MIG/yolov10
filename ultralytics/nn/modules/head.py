@@ -494,8 +494,8 @@ class RTDETRDecoder(nn.Module):
         for layer in self.input_proj:
             xavier_uniform_(layer[0].weight)
 
-class v10Detect(Detect):
 
+class v10Detect(Detect):
     max_det = 300
 
     def __init__(self, nc=80, ch=()):
@@ -515,13 +515,13 @@ class v10Detect(Detect):
 
         if not self.training:
             one2one = self.inference(one2one)
-            if not self.export:
+            if not self.export:  
                 return {"one2many": one2many, "one2one": one2one}
-            else:
+            else: 
                 assert(self.max_det != -1)
                 boxes, scores, labels = ops.v10postprocess(one2one.permute(0, 2, 1), self.max_det, self.nc)
                 return torch.cat([boxes, scores.unsqueeze(-1), labels.unsqueeze(-1).to(boxes.dtype)], dim=-1)
-        else:
+        else: 
             return {"one2many": one2many, "one2one": one2one}
 
     def bias_init(self):
@@ -533,3 +533,39 @@ class v10Detect(Detect):
         for a, b, s in zip(m.one2one_cv2, m.one2one_cv3, m.stride):  # from
             a[-1].bias.data[:] = 1.0  # box
             b[-1].bias.data[: m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
+
+class v10Segment(v10Detect):
+
+    def __init__(self, nc=80,nm=32, npr=256,ch=()):
+        super().__init__(nc, ch)
+        # seg
+        self.nm = nm
+        self.npr = npr
+        self.proto = Proto(ch[0], self.npr, self.nm)  # protos
+        self.detect = v10Detect.forward
+        c4 = max(ch[0] // 4, self.nm)
+        self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.nm, 1)) for x in ch)
+     
+    
+    def forward(self, x):
+        p = self.proto(x[0])  # mask protos
+        bs = p.shape[0]  # batch size
+        # mask coefficients
+        mc = torch.cat([self.cv4[i](x[i]).view(bs, self.nm, -1) for i in range(self.nl)], 2)  
+        x = self.detect(self, x)
+        # if self.training:
+        #     return x, mc, p
+        # return (torch.cat([x, mc], 1), p) if self.export else (torch.cat([x[0], mc], 1), (x[1], mc, p))
+        
+        if not self.training:
+            if not self.export:  # 验证
+                x["coef"] = mc
+                x["proto"] = p
+                return x
+                # return {"one2many": one2many, "one2one": one2one,"coef":mc, "proto":p}
+            else:  # 导出onnx
+                return x,mc,p
+        else:  # 训练
+            x["coef"] = mc
+            x["proto"] = p
+            return x # {"one2many": one2many, "one2one": one2one,"coef":mc, "proto":p}
