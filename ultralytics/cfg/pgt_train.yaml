@@ -41,7 +41,7 @@ overlap_mask: True # (bool) masks should overlap during training (segment train 
 mask_ratio: 4 # (int) mask downsample ratio (segment train only)
 # Classification
 dropout: 0.0 # (float) use dropout regularization (classify train only)
-pgt_coeff: 2.0 # (float) PGT loss coefficient 
+pgt_coeff: 1.0 # (float) PGT loss coefficient 
 
 # Val/Test settings ----------------------------------------------------------------------------------------------------
 val: True # (bool) validate/test during training
