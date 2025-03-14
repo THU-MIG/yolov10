@@ -6,7 +6,6 @@ pycocotools==2.0.7
 PyYAML==6.0.1
 scipy==1.13.0
 onnxslim==0.1.31
-onnxruntime-gpu==1.18.0
 gradio==4.31.5
 opencv-python==4.9.0.80
 psutil==5.9.8
