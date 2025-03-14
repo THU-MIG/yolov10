@@ -10,7 +10,7 @@ Please check out our new release on [**YOLOE**](https://github.com/THU-MIG/yoloe
   Comparison of performance, training cost, and inference efficiency between YOLOE (Ours) and YOLO-Worldv2 in terms of open text prompts.
 </p>
 
-**YOLOE(ye)** is a highly **efficient**, **unified**, and **open** object detection and segmentation model for real-time seeing anything, like human eye, under different prompt mechanisms, like *texts*, *visual inputs*, and *prompt-free paradigm*.
+**YOLOE(ye)** is a highly **efficient**, **unified**, and **open** object detection and segmentation model for real-time seeing anything, like human eye, under different prompt mechanisms, like *texts*, *visual inputs*, and *prompt-free paradigm*, with **zero inference and transferring overhead** compared with closed-set YOLOs.
 
 <p align="center">
   <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/visualization.svg" width=96%> <br>
