@@ -593,6 +593,23 @@ class Annotator:
         cv2.circle(self.im, center_bbox, pins_radius, color, -1)
         cv2.line(self.im, center_point, center_bbox, color, thickness)
 
+    def dot(self, xy, color=(255, 0, 0), radius=5):
+        """
+        Draw a dot on the image.
+
+        Args:
+            xy (tuple): The (x, y) coordinates of the dot's center.
+            color (tuple, optional): The color of the dot in BGR format. Defaults to (255, 0, 0) (blue).
+            radius (int, optional): The radius of the dot. Defaults to 5.
+        """
+        if self.pil:
+            # Convert to PIL ImageDraw
+            draw = ImageDraw.Draw(self.im)
+            draw.ellipse([xy[0]-radius, xy[1]-radius, xy[0]+radius, xy[1]+radius], fill=color, outline=color)
+        else:
+            cv2.circle(self.im, (int(xy[0]), int(xy[1])), radius, color, -1, lineType=cv2.LINE_AA)
+
+
 
 @TryExcept()  # known issue https://github.com/ultralytics/yolov5/issues/5395
 @plt_settings()
