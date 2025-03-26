@@ -13,3 +13,4 @@ psutil==5.9.8
 py-cpuinfo==9.0.0
 huggingface-hub==0.23.2
 safetensors==0.4.3
+seaborn>=0.11.0
